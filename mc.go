@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/stellar/go/build"
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
 )
 
@@ -41,9 +43,9 @@ func createNewKeys(fpath string) string {
 	return fpath
 }
 
-func fundTestAccount(address string) string {
+func fundTestAccount(stellar *horizon.Client, address string) string {
 
-	resp, err := http.Get("https://horizon-testnet.stellar.org/friendbot?addr=" + address)
+	resp, err := http.Get(stellar.URL + "/friendbot?addr=" + address)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,21 +60,52 @@ func fundTestAccount(address string) string {
 	return address
 }
 
+func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
+	resp, err := stellar.SubmitTransaction(base64tx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return resp.Ledger
+}
+
+func issueNewToken(asset build.Asset, distributor keypair.Full) {
+	return
+}
+
+type config struct {
+	client *horizon.Client
+}
+
+func readConfig(cpath string) *config {
+	//TODO: read config from cpath
+
+	return &config{client: horizon.DefaultTestNetClient}
+}
+
 // ./mc --gen-keys foo; ./mc --fund $(cat foo.pub)
 func main() {
 	var fund string
 	var keyFpath string
+	var txnToSubmit string
+	var newToken string
 
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
+	flag.StringVar(&txnToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
+	flag.StringVar(&newToken, "issue-new-token", "", "issue new token. example: --issue-new-token token issuer-public-key distributor-key-pair")
 
 	flag.Parse()
 
+	conf := readConfig("/tmp/todo")
+
 	switch {
 	case fund != "":
-		fundTestAccount(fund)
+		fundTestAccount(conf.client, fund)
 	case keyFpath != "":
 		createNewKeys(keyFpath)
+	case txnToSubmit != "":
+		submitTransaction(conf.client, txnToSubmit)
 	default:
 		flag.PrintDefaults()
 	}
