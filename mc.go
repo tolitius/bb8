@@ -110,6 +110,52 @@ func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
 	return resp.Ledger
 }
 
+type tokenPayment struct {
+	from, to, amount string
+	asset            b.Asset
+}
+
+func (t *tokenPayment) send(conf config) horizon.Account {
+
+	tx, err := b.Transaction(
+		b.SourceAccount{t.from},
+		conf.network,
+		b.AutoSequence{conf.client},
+		b.Payment(
+			b.Destination{t.to},
+			b.CreditAmount{t.asset.Code, t.asset.Issuer, t.amount},
+		),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	txe, err := tx.Sign(t.from)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	txeB64, err := txe.Base64()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// fmt.Printf("tx base64: %s", txeB64)
+
+	_, err = conf.client.SubmitTransaction(txeB64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// log.Printf("sent payment %+v, horizon said: %s", t, resp)
+
+	receiver := loadAccount(conf.client, t.to, fmt.Sprintf("sent %s %s from %s to %s\n", t.amount, t.asset.Code, seedToPair(t.from).Address(), t.to))
+
+	return receiver
+}
+
 type newToken struct {
 	symbol, issuerSeed, distributorSeed, limit string
 }
