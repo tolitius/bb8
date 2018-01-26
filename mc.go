@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
 )
@@ -43,7 +42,7 @@ func createNewKeys(fpath string) string {
 	return fpath
 }
 
-func fundTestAccount(stellar *horizon.Client, address string) string {
+func fundTestAccount(stellar *horizon.Client, address string) horizon.Account {
 
 	resp, err := http.Get(stellar.URL + "/friendbot?addr=" + address)
 	if err != nil {
@@ -51,13 +50,25 @@ func fundTestAccount(stellar *horizon.Client, address string) string {
 	}
 
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("funded %s, horizon said: %s\n", address, string(body))
-	return address
+	if resp.StatusCode != 200 {
+		log.Fatalf("could not fund %s, horizon said: %s\n", address, string(body))
+	}
+
+	account, err := stellar.LoadAccount(address)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("successfully funded %s.\nbalances: %+v\nmore details: %s",
+		address, account.Balances, account.Links.Self.Href)
+
+	return account
 }
 
 func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
@@ -69,7 +80,21 @@ func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
 	return resp.Ledger
 }
 
-func issueNewToken(asset build.Asset, distributor keypair.Full) {
+func seedToPair(seed string) keypair.KP {
+
+	kp, err := keypair.Parse(seed)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return kp
+}
+
+func issueNewToken(token, limit, issuerSeed, distributorSeed string) {
+
+	// issuer := seedToPair(issuerSeed)
+	// distributor := seedToPair(distributorSeed)
+
 	return
 }
 
@@ -93,7 +118,7 @@ func main() {
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
 	flag.StringVar(&txnToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
-	flag.StringVar(&newToken, "issue-new-token", "", "issue new token. example: --issue-new-token token issuer-public-key distributor-key-pair")
+	flag.StringVar(&newToken, "issue-new-token", "", "issue new token. example: --issue-new-token token issuer-key-file distributor-key-file")
 
 	flag.Parse()
 
