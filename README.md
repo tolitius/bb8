@@ -20,7 +20,7 @@ Usage of ./mc:
   -issue-new-token string
     	issue new token (asset). example: --issue-new-token token issuer-seed distributor-seed [limit]
   -send-payment string
-    	send payment from one account to another. example: --send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer-address": "address"}'
+    	send payment from one account to another. example: --send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
   -submit-tx string
     	submits a base64 encoded transaction. example: --submit-tx txn
 ```
@@ -40,14 +40,14 @@ more details: https://horizon-testnet.stellar.org/accounts/GDXSI3GFROEMAK3K77633
 
 There are usually at least two accounts that participate in issuing a new token (a.k.a. "asset"):
 
-* an "issuer" account which signs a new asset
-* a "distributor" account that sets a trustline for this "asset" and this "issuer", and is later used as an account that would distribute this asset to other accounts
+* an issuer account which signs a new asset
+* a distribution account that sets a trustline for this "asset" and this "issuer", and is later used as an account that would distribute this asset to other accounts
 
-A "distributor" account is just a concept, and does not have to exist. Once the issuer signs an asset, any other account on the Stellar network can create a trustline: a declaration that it trusts a particular asset from a particular issuer.
+A distribution account is just a concept, and does not have to exist. Once the issuer signs an asset, any other account on the Stellar network can create a trustline: a declaration that it trusts a particular asset from a particular issuer.
 
-But usually keeping a separate "distributor" account works well: it is easier to track funds since the money sent back to it won't disappear and would still remain in circulation while any money sent back directly to the issuer account would disappear.
+But usually keeping a separate distribution account works well: it is easier to track funds since the money sent back to it won't disappear and would still remain in circulation while any money sent back directly to the issuer account would disappear.
 
-The official name for the "distributor" account is [specialized issuing account](https://www.stellar.org/developers/guides/issuing-assets.html#specialized-issuing-accounts) as per Stellar documentation.
+The official name for the distribution account is [specialized issuing account](https://www.stellar.org/developers/guides/issuing-assets.html#specialized-issuing-accounts) as per Stellar documentation.
 
 In this example we would assume no accounts exist so we'll generate issuer and distributor key pairs:
 
@@ -58,7 +58,7 @@ $ ./mc --gen-keys distributor
 2018/01/26 14:59:24 keys are created and stored in: distributor.pub and distributor
 ```
 
-In order to process transactions these accounts need to have at least `1.5` XLM + transaction fees, so let's be very generous and fund them `10,000` each:
+In order to process transactions these accounts need to have a few `XLM`s for minimum balances, trustline and transaction fees, but let's be _very_ generous and fund them `10,000` each:
 
 ``` sh
 $ ./mc --fund "$(cat issuer.pub)"
@@ -112,17 +112,19 @@ All the YUMmy details could be seen on any ledger interface. For example this is
 
 <img src="doc/img/yum-42.png">
 
+notice a "Change Trust" operation and zero balance (for now).
+
 ## Sending Payments
 
-In order to send a payment of non native assset, which is any token besides 'XLM', we need several things:
+In order to send a payment of a non native assset, which is any token on a Stellar network besides 'XLM', we need to know several things:
 
-* create a transaction that is signed by the sender (i.e. sender's private key)
+* sender's private key in order to sign this payment transaction
 * address of the recepient (i.e. receiving account's public key)
 * token code
 * amount
 * token issuer (i.e. issuer's public key)
 
-To continue the [issuing a new token](#issuing-a-new-token) example, we'll send `42.0` `YUM`s from the issuer to distributor. Since there are quite a few parameters, the `--send-payment` option takes them as a JSON map with these keys: `"from" "to" "token" "amount" "issuer"`:
+To continue the [issuing a new token](#issuing-a-new-token) example, we'll send `42.0` YUMs from the issuer to distributor. Since there are quite a few parameters, the `--send-payment` option takes them as a JSON map with these keys: `"from", "to", "token", "amount", "issuer"`:
 
 ```bash
 $ ./mc --send-payment '{"from": "'$(cat issuer)'", "to": "'$(cat distributor.pub)'", "token": "YUM", "amount": "42.0", "issuer": "'$(cat issuer.pub)'"}'
@@ -138,7 +140,7 @@ Now if we check the distribution account on [testnet.stellarchain.io](http://tes
 
 <img src="doc/img/yum-42-42.png">
 
-Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has `YUM`s to send. In the example above it was the issuer since it was the only account that had `YUM`s. The issuer's public key though should still be used to identify the asset: "this YUM you are getting was signed by me".
+Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has YUMs to send. The reason it was the issuer in the example above is that it was only account that had YUMs. The issuer's public key though should still be used to identify the asset: "this YUM token you are getting was indeed signed by me".
 
 ## License
 
