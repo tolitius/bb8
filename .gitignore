@@ -3,6 +3,10 @@
 *.dll
 *.so
 *.dylib
+issuer*
+distributor*
+mc
+
 
 # Test binary, build with `go test -c`
 *.test

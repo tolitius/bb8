@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -102,28 +103,42 @@ func fundTestAccount(stellar *horizon.Client, address string) horizon.Account {
 }
 
 func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
+
 	resp, err := stellar.SubmitTransaction(base64tx)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		herr, isHorizonError := err.(*horizon.Error)
+		if isHorizonError {
+			resultCodes, err := herr.ResultCodes()
+			if err != nil {
+				log.Fatalln("failed to extract result codes from horizon response")
+			}
+			log.Fatalln(resultCodes)
+		}
+		log.Fatalln("could not submit the transaction")
 	}
 
 	return resp.Ledger
 }
 
 type tokenPayment struct {
-	from, to, amount string
-	asset            b.Asset
+	From, To, Amount, Token, Issuer string
 }
 
-func (t *tokenPayment) send(conf config) horizon.Account {
+func (t *tokenPayment) send(conf *config) horizon.Account {
+
+	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
+
+	asset := b.CreditAsset(t.Token, t.Issuer)
 
 	tx, err := b.Transaction(
-		b.SourceAccount{t.from},
+		b.SourceAccount{t.From},
 		conf.network,
 		b.AutoSequence{conf.client},
 		b.Payment(
-			b.Destination{t.to},
-			b.CreditAmount{t.asset.Code, t.asset.Issuer, t.amount},
+			b.Destination{t.To},
+			b.CreditAmount{asset.Code, asset.Issuer, t.Amount},
 		),
 	)
 
@@ -131,7 +146,7 @@ func (t *tokenPayment) send(conf config) horizon.Account {
 		log.Fatal(err)
 	}
 
-	txe, err := tx.Sign(t.from)
+	txe, err := tx.Sign(t.From)
 
 	if err != nil {
 		log.Fatal(err)
@@ -145,13 +160,10 @@ func (t *tokenPayment) send(conf config) horizon.Account {
 
 	// fmt.Printf("tx base64: %s", txeB64)
 
-	_, err = conf.client.SubmitTransaction(txeB64)
-	if err != nil {
-		log.Fatal(err)
-	}
+	submitTransaction(conf.client, txeB64)
 	// log.Printf("sent payment %+v, horizon said: %s", t, resp)
 
-	receiver := loadAccount(conf.client, t.to, fmt.Sprintf("sent %s %s from %s to %s\n", t.amount, t.asset.Code, seedToPair(t.from).Address(), t.to))
+	receiver := loadAccount(conf.client, t.To, "... [payment sent]\n")
 
 	return receiver
 }
@@ -196,10 +208,7 @@ func (t *newToken) issueNew(conf *config) b.Asset {
 	}
 	// log.Printf("tx base64: %s", txeB64)
 
-	_, err = conf.client.SubmitTransaction(txeB64)
-	if err != nil {
-		log.Fatal(err)
-	}
+	submitTransaction(conf.client, txeB64)
 	// log.Printf("submitted change of trust tx, horizon said: %s", resp)
 
 	loadAccount(conf.client, distributor.Address(), fmt.Sprintf("issued trust for %s to ", t.symbol))
@@ -232,6 +241,12 @@ func main() {
 		createNewKeys(keyFpath)
 	case txnToSubmit != "":
 		submitTransaction(conf.client, txnToSubmit)
+	case sendPayment != "":
+		payment := &tokenPayment{}
+		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
+			log.Fatal(err)
+		}
+		payment.send(conf)
 	case issueToken != "":
 
 		switch nargs := len(os.Args); nargs {

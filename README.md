@@ -1,8 +1,14 @@
 # Stellar Mission Control Center
 
-By default stellar-mc is using Stellar test network a.k.a. testnet.
+By default stellar-mc is using [Stellar](https://www.stellar.org/) test network a.k.a. testnet.
 
-## buttons to push
+- [Buttons to Push](#buttons-to-push)
+- [Create and Fund a Test Account](#create-and-fund-a-test-account)
+- [Issuing a New Token](#issuing-a-new-token)
+- [Sending Payments](#sending-payments)
+- [License](#license)
+
+## Buttons to Push
 
 ``` sh
 $ ./mc --help
@@ -105,6 +111,34 @@ notice `Limit:42.0000000` for `Asset:{Code:YUM}`.
 All the YUMmy details could be seen on any ledger interface. For example this is the distributor account on [testnet.stellarchain.io](http://testnet.stellarchain.io/address/GBUV4AVA53R75U3TYI3KC4GHJ7YPWSKSXZB76ZKTRJHZPKOFM476EY6V):
 
 <img src="doc/img/yum-42.png">
+
+## Sending Payments
+
+In order to send a payment of non native assset, which is any token besides 'XLM', we need several things:
+
+* create a transaction that is signed by the sender (i.e. sender's private key)
+* address of the recepient (i.e. receiving account's public key)
+* token code
+* amount
+* token issuer (i.e. issuer's public key)
+
+To continue the [issuing a new token](#issuing-a-new-token) example, we'll send `42.0` `YUM`s from the issuer to distributor. Since there are quite a few parameters, the `--send-payment` option takes them as a JSON map with these keys: `"from" "to" "token" "amount" "issuer"`:
+
+```bash
+$ ./mc --send-payment '{"from": "'$(cat issuer)'", "to": "'$(cat distributor.pub)'", "token": "YUM", "amount": "42.0", "issuer": "'$(cat issuer.pub)'"}'
+
+2018/01/27 03:01:47 sending 42.0 YUM from GCP4KWV2UOZXEKHV2RV4BO5C5SY6HERCUON7YNCUYQ4D5XMWAKBP5B5L to GCBGULNYR75FIFLS4YKWFW42WRN5NYRHWXCRI672UQCJDCAMXRU6PY6D
+2018/01/27 03:01:50 ... [payment sent]
+account: GCBGULNYR75FIFLS4YKWFW42WRN5NYRHWXCRI672UQCJDCAMXRU6PY6D.
+balances: [{Balance:42.0000000 Limit:42.0000000 Asset:{Type:credit_alphanum4 Code:YUM Issuer:GCP4KWV2UOZXEKHV2RV4BO5C5SY6HERCUON7YNCUYQ4D5XMWAKBP5B5L}} {Balance:9999.9999800 Limit: Asset:{Type:native Code: Issuer:}}]
+more details: https://horizon-testnet.stellar.org/accounts/GCBGULNYR75FIFLS4YKWFW42WRN5NYRHWXCRI672UQCJDCAMXRU6PY6D
+```
+
+Now if we check the distribution account on [testnet.stellarchain.io](http://testnet.stellarchain.io/address/GCBGULNYR75FIFLS4YKWFW42WRN5NYRHWXCRI672UQCJDCAMXRU6PY6D) we'll see it has `42.0` `YUM`s sent to it from the issuer:
+
+<img src="doc/img/yum-42-42.png">
+
+Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has `YUM`s to send. In the example above it was the issuer since it was the only account that had `YUM`s. The issuer's public key though should still be used to identify the asset: "this YUM you are getting was signed by me".
 
 ## License
 
