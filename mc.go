@@ -213,11 +213,13 @@ func main() {
 	var keyFpath string
 	var txnToSubmit string
 	var issueToken string
+	var sendPayment string
 
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
 	flag.StringVar(&txnToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
-	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token. example: --issue-new-token token issuer-seed distributor-seed [limit]")
+	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token (asset). example: --issue-new-token token issuer-seed distributor-seed [limit]")
+	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer-address\": \"address\"}'")
 
 	flag.Parse()
 

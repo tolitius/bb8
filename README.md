@@ -12,7 +12,9 @@ Usage of ./mc:
   -gen-keys string
     	creates a pair of keys (in two files "file-path" and "file-path.pub"). example: --gen-keys file-path
   -issue-new-token string
-    	issue new token. example: --issue-new-token token issuer-seed distributor-seed [limit]
+    	issue new token (asset). example: --issue-new-token token issuer-seed distributor-seed [limit]
+  -send-payment string
+    	send payment from one account to another. example: --send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer-address": "address"}'
   -submit-tx string
     	submits a base64 encoded transaction. example: --submit-tx txn
 ```
