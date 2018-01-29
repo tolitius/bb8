@@ -102,7 +102,7 @@ func fundTestAccount(stellar *horizon.Client, address string) horizon.Account {
 	return loadAccount(stellar, address, "successfully funded ")
 }
 
-func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
+func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
 
 	resp, err := stellar.SubmitTransaction(base64tx)
 
@@ -120,6 +120,23 @@ func submitTransaction(stellar *horizon.Client, base64tx string) int32 {
 	}
 
 	return resp.Ledger
+}
+
+func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed string) int32 {
+
+	txe, err := txn.Sign(seed)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	txeB64, err := txe.Base64()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return submitTransactionB64(stellar, txeB64)
 }
 
 type tokenPayment struct {
@@ -146,22 +163,7 @@ func (t *tokenPayment) send(conf *config) horizon.Account {
 		log.Fatal(err)
 	}
 
-	txe, err := tx.Sign(t.From)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	txeB64, err := txe.Base64()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// fmt.Printf("tx base64: %s", txeB64)
-
-	submitTransaction(conf.client, txeB64)
-	// log.Printf("sent payment %+v, horizon said: %s", t, resp)
+	submitTransaction(conf.client, tx, t.From)
 
 	receiver := loadAccount(conf.client, t.To, "... [payment sent]\n")
 
@@ -196,20 +198,7 @@ func (t *newToken) issueNew(conf *config) b.Asset {
 		log.Fatal(err)
 	}
 
-	txe, err := tx.Sign(t.distributorSeed)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	txeB64, err := txe.Base64()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	// log.Printf("tx base64: %s", txeB64)
-
-	submitTransaction(conf.client, txeB64)
-	// log.Printf("submitted change of trust tx, horizon said: %s", resp)
+	submitTransaction(conf.client, tx, t.distributorSeed)
 
 	loadAccount(conf.client, distributor.Address(), fmt.Sprintf("issued trust for %s to ", t.symbol))
 
@@ -220,15 +209,17 @@ func (t *newToken) issueNew(conf *config) b.Asset {
 func main() {
 	var fund string
 	var keyFpath string
-	var txnToSubmit string
+	var txToSubmit string
 	var issueToken string
 	var sendPayment string
+	var txOptions string
 
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
-	flag.StringVar(&txnToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
+	flag.StringVar(&txToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
 	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token (asset). example: --issue-new-token token issuer-seed distributor-seed [limit]")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer-address\": \"address\"}'")
+	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"homeDomain\": \"stellar.org\", \"maxWeight\": 1}'")
 
 	flag.Parse()
 
@@ -239,8 +230,8 @@ func main() {
 		fundTestAccount(conf.client, fund)
 	case keyFpath != "":
 		createNewKeys(keyFpath)
-	case txnToSubmit != "":
-		submitTransaction(conf.client, txnToSubmit)
+	case txToSubmit != "":
+		submitTransactionB64(conf.client, txToSubmit)
 	case sendPayment != "":
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
@@ -265,6 +256,8 @@ func main() {
 			log.Fatalf("usage: --issue-new-token token issuer-seed distributor-seed [limit]\nthe arguments given are: %+v", os.Args[1:])
 		}
 
+	case len(txOptions) > 0:
+		fmt.Printf("tx options %+v", txOptions)
 	default:
 		flag.PrintDefaults()
 	}
