@@ -5,6 +5,7 @@
 *.dylib
 issuer*
 distributor*
+foo*
 mc
 
 

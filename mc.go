@@ -69,20 +69,25 @@ func createNewKeys(fpath string) string {
 	return fpath
 }
 
-func loadAccount(stellar *horizon.Client, address, message string) horizon.Account {
+func toJSON(foo interface{}) string {
+	b, err := json.MarshalIndent(foo, "", "  ")
+	if err != nil {
+		log.Fatal("error:", err)
+	}
+	return string(b)
+}
+
+func loadAccount(stellar *horizon.Client, address string) horizon.Account {
 
 	account, err := stellar.LoadAccount(address)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("%saccount: %s.\nbalances: %+v\nmore details: %s",
-		message, address, account.Balances, account.Links.Self.Href)
-
 	return account
 }
 
-func fundTestAccount(stellar *horizon.Client, address string) horizon.Account {
+func fundTestAccount(stellar *horizon.Client, address string) {
 
 	resp, err := http.Get(stellar.URL + "/friendbot?addr=" + address)
 	if err != nil {
@@ -99,8 +104,6 @@ func fundTestAccount(stellar *horizon.Client, address string) horizon.Account {
 	if resp.StatusCode != 200 {
 		log.Fatalf("could not fund %s, horizon said: %s\n", address, string(body))
 	}
-
-	return loadAccount(stellar, address, "successfully funded ")
 }
 
 func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
@@ -205,9 +208,51 @@ func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 	return tx
 }
 
+type txOperations struct {
+	SourceAccount *b.SourceAccount `json:"source-account"`
+	//TODO: add all transaction operations
+}
+
+func (t *txOperations) parse(operations string) []b.TransactionMutator {
+	topts := &txOperations{}
+	if err := json.Unmarshal([]byte(operations), topts); err != nil {
+		log.Fatal(err)
+	}
+
+	values := structValues(*topts)
+	muts := make([]b.TransactionMutator, len(values))
+
+	for i := 0; i < len(values); i++ {
+		switch values[i].(type) {
+		case b.TransactionMutator:
+			muts[i] = values[i].(b.TransactionMutator)
+		default:
+			log.Fatalf("%+v is not a valid transaction operation", values[i])
+		}
+	}
+
+	return muts
+}
+
+func (t *txOperations) buildTransaction(conf *config, operations []b.TransactionMutator, options b.SetOptionsBuilder) *b.TransactionBuilder {
+
+	tx, err := b.Transaction(
+		conf.network,
+		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
+		options)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tx.Mutate(operations...)
+
+	return tx
+}
+
 type txOptions struct {
-	HomeDomain   *b.HomeDomain
-	MasterWeight *b.MasterWeight
+	HomeDomain   *b.HomeDomain   `json:"home-domain"`
+	MasterWeight *b.MasterWeight `json:"master-weight"`
 	//TODO: add all transaction options
 }
 
@@ -245,6 +290,8 @@ func main() {
 	var issueToken string
 	var sendPayment string
 	var txOptions string
+	var accountDetails string
+	// var buildTransaction string
 
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
@@ -252,6 +299,7 @@ func main() {
 	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token/asset. example (\"limit\" param is optional): --issue-new-token '{\"code\": \"XYZ\", \"issuer-address\": \"address\", \"distributor-seed\":\"seed\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"homeDomain\": \"stellar.org\", \"maxWeight\": 1}'")
+	flag.StringVar(&accountDetails, "account-details", "", "load and return account details. example: --account-details address")
 
 	flag.Parse()
 
@@ -269,6 +317,8 @@ func main() {
 		createNewKeys(keyFpath)
 	case txToSubmit != "":
 		submitTransactionB64(conf.client, txToSubmit)
+	case accountDetails != "":
+		fmt.Println(toJSON(loadAccount(conf.client, accountDetails)))
 	case sendPayment != "":
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
