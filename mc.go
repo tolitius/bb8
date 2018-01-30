@@ -125,11 +125,17 @@ func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
 
 func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed string) int32 {
 
-	//TODO: refactor signing out to a pluggable func to be able to delegate it to external signers such as hardware wallets
-	txe, err := txn.Sign(seed)
+	var txe b.TransactionEnvelopeBuilder
+	var err error
 
-	if err != nil {
-		log.Fatal(err)
+	if seed != "" {
+		txe, err = txn.Sign(seed)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		//TODO: refactor signing out to a pluggable func to be able to delegate it to external signers such as hardware wallets
+		log.Fatal("can't find a seed to sign this transaction, and external / hardware signers are not yet supported")
 	}
 
 	txeB64, err := txe.Base64()
@@ -145,7 +151,7 @@ type tokenPayment struct {
 	From, To, Amount, Token, Issuer string
 }
 
-func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) horizon.Account {
+func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
 
 	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
 
@@ -166,11 +172,7 @@ func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) horizon
 		log.Fatal(err)
 	}
 
-	submitTransaction(conf.client, tx, t.From)
-
-	receiver := loadAccount(conf.client, t.To, "... [payment sent]\n")
-
-	return receiver
+	return tx
 }
 
 type newToken struct {
@@ -179,14 +181,11 @@ type newToken struct {
 	Code, Limit     string
 }
 
-func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) b.Asset {
+func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
 
 	distributor := seedToPair(t.DistributorSeed)
 
-	asset := b.CreditAsset(t.Code, t.IssuerAddress)
-
 	var limit = b.MaxLimit
-
 	if t.Limit != "" {
 		limit = b.Limit(t.Limit)
 	}
@@ -203,11 +202,7 @@ func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) b.Asset
 		log.Fatal(err)
 	}
 
-	submitTransaction(conf.client, tx, t.DistributorSeed)
-
-	loadAccount(conf.client, distributor.Address(), fmt.Sprintf("issued trust for %s to ", t.Code))
-
-	return asset
+	return tx
 }
 
 type txOptions struct {
@@ -279,13 +274,15 @@ func main() {
 		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
 			log.Fatal(err)
 		}
-		payment.send(conf, txOptionsBuilder)
+		tx := payment.send(conf, txOptionsBuilder)
+		submitTransaction(conf.client, tx, payment.From)
 	case issueToken != "":
 		nt := &newToken{}
 		if err := json.Unmarshal([]byte(issueToken), nt); err != nil {
 			log.Fatal(err)
 		}
-		nt.issueNew(conf, txOptionsBuilder)
+		tx := nt.issueNew(conf, txOptionsBuilder)
+		submitTransaction(conf.client, tx, nt.DistributorSeed)
 	default:
 		if txOptions != "" {
 			fmt.Printf("options: %+v", txOptionsBuilder)
