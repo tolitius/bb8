@@ -125,6 +125,7 @@ func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
 
 func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed string) int32 {
 
+	//TODO: refactor signing out to a pluggable func to be able to delegate it to external signers such as hardware wallets
 	txe, err := txn.Sign(seed)
 
 	if err != nil {
@@ -144,7 +145,7 @@ type tokenPayment struct {
 	From, To, Amount, Token, Issuer string
 }
 
-func (t *tokenPayment) send(conf *config) horizon.Account {
+func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) horizon.Account {
 
 	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
 
@@ -158,6 +159,7 @@ func (t *tokenPayment) send(conf *config) horizon.Account {
 			b.Destination{t.To},
 			b.CreditAmount{asset.Code, asset.Issuer, t.Amount},
 		),
+		txOptions,
 	)
 
 	if err != nil {
@@ -172,36 +174,38 @@ func (t *tokenPayment) send(conf *config) horizon.Account {
 }
 
 type newToken struct {
-	symbol, issuerSeed, distributorSeed, limit string
+	IssuerAddress   string `json:"issuer-address"`
+	DistributorSeed string `json:"distributor-seed"`
+	Code, Limit     string
 }
 
-func (t *newToken) issueNew(conf *config) b.Asset {
+func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) b.Asset {
 
-	issuer := seedToPair(t.issuerSeed)
-	distributor := seedToPair(t.distributorSeed)
+	distributor := seedToPair(t.DistributorSeed)
 
-	asset := b.CreditAsset(t.symbol, issuer.Address())
+	asset := b.CreditAsset(t.Code, t.IssuerAddress)
 
 	var limit = b.MaxLimit
 
-	if t.limit != "" {
-		limit = b.Limit(t.limit)
+	if t.Limit != "" {
+		limit = b.Limit(t.Limit)
 	}
 
 	tx, err := b.Transaction(
 		b.SourceAccount{distributor.Address()},
 		b.AutoSequence{conf.client},
 		conf.network,
-		b.Trust(t.symbol, issuer.Address(), limit),
+		b.Trust(t.Code, t.IssuerAddress, limit),
+		txOptions,
 	)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	submitTransaction(conf.client, tx, t.distributorSeed)
+	submitTransaction(conf.client, tx, t.DistributorSeed)
 
-	loadAccount(conf.client, distributor.Address(), fmt.Sprintf("issued trust for %s to ", t.symbol))
+	loadAccount(conf.client, distributor.Address(), fmt.Sprintf("issued trust for %s to ", t.Code))
 
 	return asset
 }
@@ -235,11 +239,7 @@ func parseOptions(options string) b.SetOptionsBuilder {
 	}
 
 	values := structValues(*topts)
-	builder := b.SetOptions(values...)
-
-	fmt.Printf("builder: %+v", builder)
-
-	return builder
+	return b.SetOptions(values...)
 }
 
 // ./mc --gen-keys foo; ./mc --fund $(cat foo.pub)
@@ -254,13 +254,18 @@ func main() {
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
 	flag.StringVar(&txToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
-	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token (asset). example: --issue-new-token token issuer-seed distributor-seed [limit]")
-	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer-address\": \"address\"}'")
+	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token/asset. example (\"limit\" param is optional): --issue-new-token '{\"code\": \"XYZ\", \"issuer-address\": \"address\", \"distributor-seed\":\"seed\", \"limit\": \"42.0\"}'")
+	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"homeDomain\": \"stellar.org\", \"maxWeight\": 1}'")
 
 	flag.Parse()
 
 	conf := readConfig("/tmp/todo")
+
+	var txOptionsBuilder b.SetOptionsBuilder
+	if txOptions != "" {
+		txOptionsBuilder = parseOptions(txOptions)
+	}
 
 	switch {
 	case fund != "":
@@ -274,28 +279,18 @@ func main() {
 		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
 			log.Fatal(err)
 		}
-		payment.send(conf)
+		payment.send(conf, txOptionsBuilder)
 	case issueToken != "":
-
-		switch nargs := len(os.Args); nargs {
-		case 5:
-			(&newToken{
-				symbol:          os.Args[2],
-				issuerSeed:      os.Args[3],
-				distributorSeed: os.Args[4]}).issueNew(conf)
-		case 6:
-			(&newToken{
-				symbol:          os.Args[2],
-				issuerSeed:      os.Args[3],
-				distributorSeed: os.Args[4],
-				limit:           os.Args[5]}).issueNew(conf)
-		default:
-			log.Fatalf("usage: --issue-new-token token issuer-seed distributor-seed [limit]\nthe arguments given are: %+v", os.Args[1:])
+		nt := &newToken{}
+		if err := json.Unmarshal([]byte(issueToken), nt); err != nil {
+			log.Fatal(err)
 		}
-
-	case len(txOptions) > 0:
-		parseOptions(txOptions)
+		nt.issueNew(conf, txOptionsBuilder)
 	default:
-		flag.PrintDefaults()
+		if txOptions != "" {
+			fmt.Printf("options: %+v", txOptionsBuilder)
+		} else {
+			flag.PrintDefaults()
+		}
 	}
 }
