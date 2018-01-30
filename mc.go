@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -205,6 +206,42 @@ func (t *newToken) issueNew(conf *config) b.Asset {
 	return asset
 }
 
+type txOptions struct {
+	HomeDomain   *b.HomeDomain
+	MasterWeight *b.MasterWeight
+	//TODO: add all transaction options
+}
+
+func structValues(s interface{}) []interface{} {
+
+	v := reflect.ValueOf(s)
+
+	values := make([]interface{}, 0)
+
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.IsNil() {
+			values = append(values, f.Interface())
+		}
+	}
+
+	return values
+}
+
+func parseOptions(options string) b.SetOptionsBuilder {
+	topts := &txOptions{}
+	if err := json.Unmarshal([]byte(options), topts); err != nil {
+		log.Fatal(err)
+	}
+
+	values := structValues(*topts)
+	builder := b.SetOptions(values...)
+
+	fmt.Printf("builder: %+v", builder)
+
+	return builder
+}
+
 // ./mc --gen-keys foo; ./mc --fund $(cat foo.pub)
 func main() {
 	var fund string
@@ -257,7 +294,7 @@ func main() {
 		}
 
 	case len(txOptions) > 0:
-		fmt.Printf("tx options %+v", txOptions)
+		parseOptions(txOptions)
 	default:
 		flag.PrintDefaults()
 	}
