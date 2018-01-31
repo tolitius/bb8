@@ -1,0 +1,16 @@
+# .goreleaser.yml
+# Build customization
+builds:
+  - main: main.go
+    binary: stellar-mc
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+# Archive customization
+archive:
+  format: tar.gz
+  replacements:
+    darwin: macOS
