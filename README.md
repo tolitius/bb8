@@ -26,7 +26,7 @@ There are already mutiple ways to interact with Stellar:
 * [SDK libraries](https://www.stellar.org/developers/reference/#libraries) in several languages
 * [Stellar Labratory](https://www.stellar.org/laboratory/)
 
-Stellar Mission Control Center adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar network.
+Stellar Mission Control Center adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
 
 ## Buttons to Push
 
@@ -234,7 +234,7 @@ $ ./mc --account-details $(cat distributor.pub) | jq '.balances'
 
 Now we are ready to issue a new token, let's call it `YUM`.
 
-`stellar-mc` has an `--issue-new` option that takes a token's "code", issuer's address and distributor's seed (to sign the transaction) as JSON:
+`stellar-mc` has an `--issue-new-token` option that takes a token's code, issuer's address and distributor's seed (to sign the transaction) as JSON:
 
 ``` sh
 $ ./mc --issue-new-token '{"code": "YUM",
@@ -245,7 +245,6 @@ $ ./mc --issue-new-token '{"code": "YUM",
 `mc --issue-new-token` does several things:
 
 * creates a new asset (in this case `YUM`)
-* signs it with an issuer's seed (private key)
 * creates a new transaction where it sets a trustline between the receiving account ("distributor") and this asset
 * signs this transaction with distributor's seed
 * submits this transaction to Stellar
@@ -272,11 +271,11 @@ $ ./mc --account-details $(cat distributor.pub) | jq '.balances'
 
 Nice! We have established a trustline for YUMs and almost ready to distribute them to other accounts. Notice the native balance is no longer 10,000 lumens. This is due to the fees the distribution account had to pay: 100 [stroops](https://www.stellar.org/developers/guides/concepts/assets.html#one-stroop-multiple-stroops) for the transaction processing and another 100 stroops for setting up a trustline which is one of the transaction operations.
 
-Setting a trustline is called a "[Change Trust](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#change-trust)" operation in Stellar speak. By default this operation would allow the distributor account to receive up to `922337203685.4775807` (`MaxInt64  = 1<<63 - 1`) YUMs. But it has an additional `limit` parameter that sets a cap on how much YUMs an account may get.
+Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#change-trust)" operation in Stellar speak. By default this operation would allow a distribution account to receive up to `922337203685.4775807` (`MaxInt64  = 1<<63 - 1`) YUMs. But it has an additional `limit` parameter that sets a cap on how much YUMs an account may get.
 
 ### Limitting Trustline
 
-The `--issue-new` options takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
+The `--issue-new-token` option takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
 ``` sh
 $ ./mc --issue-new-token '{"code": "YUM",
@@ -302,13 +301,13 @@ $ ./mc --issue-new-token '{"code": "YUM",
 }
 ```
 
-notice `"limit": "42.0000000"` for YUMs.
+notice the `"limit": "42.0000000"` for YUMs.
 
 All the YUMmy details could be seen on any ledger interface. For example this is the distribution account on [testnet.stellarchain.io](http://testnet.stellarchain.io/address/GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5):
 
 <img src="doc/img/yum-42.png">
 
-notice a "Change Trust" operation and zero balance (for now).
+notice a "Change Trust" operation and a zero balance (for now).
 
 ## Sending Payments
 
@@ -357,7 +356,7 @@ Here is the prettier version of `42.0` YUMs on [testnet.stellarchain.io](http://
 
 <img src="doc/img/yum-42-42.png">
 
-Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has YUMs to send. The reason it was the issuer in the example above is that it was only account that had YUMs. The issuer's public key though should still be used to identify the asset: "this YUM token you are getting was indeed signed by me".
+Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has YUMs to send. The reason it was the issuer in the example above is that it was the only account that had YUMs. The issuer's public key though should still be used to identify the asset: "this YUM token you are getting was indeed signed by me".
 
 Excellent, we are now ready to distribute YUMs. We can use the same `--send-payment` option with different account addresses to do that.
 
@@ -365,13 +364,15 @@ Excellent, we are now ready to distribute YUMs. We can use the same `--send-paym
 
 When submitting a transaction to Stellar there are several [transaction options](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#set-options) that could be set.
 
-`stellar-mc` has a `--tx-options` option that takes this options as JSON and sets them on a transaction before it is submitted.
+`stellar-mc` has a `--tx-options` option that takes these options as JSON and sets them on a transaction before it is submitted.
+
+It can also be combined with `--send-payment`, `--issue-new-token`, `--new-tx` and any other transactions.
 
 ### Adding Discoverablity and Meta Information
 
 To continue the [issuing a new token](#issuing-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
 
-In order to discover information about a particular token Stellar would look at a "home domain" property of an account and then will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "`https://home-domain/.well-known/stellar.toml`".
+In order to discover information about a particular token Stellar would look at a "home domain" property of an account and then it will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "`https://home-domain/.well-known/stellar.toml`".
 
 Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--tx-options`:
 
@@ -382,7 +383,7 @@ $ ./mc --new-tx '{"source-account": "'$(cat issuer)'"}' \
 
 > _will discuss `--new-tx` later as it is still work in progress to include other transaction operations_
 
-and now this link to the domain is there on the Stellar network:
+and now the issuer account is linked to its home domain where Stellar can find more details about it:
 
 ```sh
 $ ./mc --account-details $(cat issuer.pub) | jq '.home_domain'
@@ -394,7 +395,7 @@ Another example of using Stellar transaction options would be setting an inflati
 
 > _The Stellar distributed network has a built-in, fixed, nominal inflation mechanism. New lumens are added to the network at the rate of 1% each year. Each week, the protocol distributes these lumens to any account that gets over .05% of the “votes” from other accounts in the network_ (from [Stellar documentation](https://www.stellar.org/developers/guides/concepts/inflation.html))
 
-Inflation destination can be set via `--tx-options`. For example let's set an inflation destination on the distributor account from the examples above:
+Inflation destination can be set via `--tx-options`. For example let's set an inflation destination on the distribution account from the examples above:
 
 ```sh
 $ ./mc --new-tx '{"source-account": "'$(cat distributor)'"}' \
