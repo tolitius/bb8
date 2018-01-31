@@ -3,6 +3,9 @@
 A command line interface to [Stellar](https://www.stellar.org/) network.
 
 - [Why](#why)
+- [Installation](#installation)
+  - [Download, Unpack, Go](#download-unpack-go)
+  - [Or just Go](#or-just-go)
 - [Buttons to Push](#buttons-to-push)
 - [Create Account Keys](#create-account-keys)
 - [Funding a Test Account](#funding-a-test-account)
@@ -27,6 +30,40 @@ There are already mutiple ways to interact with Stellar:
 * [Stellar Labratory](https://www.stellar.org/laboratory/)
 
 Stellar Mission Control Center adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
+
+## Installation
+
+### Download, Unpack, Go
+
+Grab a `stellar-mc` release from [here](https://github.com/tolitius/stellar-mc/releases) that matches your operating system.
+
+Unpack it:
+
+```sh
+tar -xvzf stellar-mc_[version]_[OS].tar.gz
+```
+
+and go:
+
+```sh
+$ ./stellar-mc --help  ##  or "stellar-mc.exe --help" on Windows
+```
+
+### Or just Go
+
+If you have Golang installed, you could simply:
+
+```sh
+$ go get github.com/tolitius/stellar-mc
+```
+
+a runnable `stellar-mc` will be under `$GOBIN`:
+
+```sh
+$ $GOBIN/stellar-mc --help
+```
+
+Or clone the repo and `go build` it if you prefer a bare minimum.
 
 ## Buttons to Push
 
