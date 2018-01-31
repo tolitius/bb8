@@ -2,6 +2,22 @@
 
 A command line interface to [Stellar](https://www.stellar.org/) network.
 
+- [Why](#why)
+- [Buttons to Push](#buttons-to-push)
+- [Create Account Keys](#create-account-keys)
+- [Funding a Test Account](#funding-a-test-account)
+- [Account Details](#account-details)
+- [Issuing a New Token](#issuing-a-new-token)
+  - [Issuer and Distributor](#issuer-and-distributor)
+  - [Creating and funding accounts](#creating-and-funding-accounts)
+  - [Do You Trust Me?](#do-you-trust-me)
+  - [Limitting Trustline](#limitting-trustline)
+- [Sending Payments](#sending-payments)
+- [Transaction Options](#transaction-options)
+  - [Adding Discoverablity and Meta Information](#adding-discoverablity-and-meta-information)
+  - [Setting Inflation Destination](#setting-inflation-destination)
+- [License](#license)
+
 ## Why
 
 There are already mutiple ways to interact with Stellar:
@@ -148,12 +164,10 @@ $ ./mc --account-details $(cat foo.pub) | jq '.balances'
 ```
 
 ```json
-[
-  {
-    "balance": "10000.0000000",
-    "asset_type": "native"
-  }
-]
+{
+  "balance": "10000.0000000",
+  "asset_type": "native"
+}
 ```
 
 it is telling us that the Friendbot from the step above did what we asked and funded this account with `10,000` lumens (a.k.a. as "native" Stellar currency).
@@ -223,7 +237,9 @@ Now we are ready to issue a new token, let's call it `YUM`.
 `stellar-mc` has an `--issue-new` option that takes a token's "code", issuer's address and distributor's seed (to sign the transaction) as JSON:
 
 ``` sh
-$ ./mc --issue-new-token '{"code": "YUM", "issuer-address": "'$(cat issuer.pub)'", "distributor-seed":"'$(cat distributor)'"}'
+$ ./mc --issue-new-token '{"code": "YUM",
+                           "issuer-address": "'$(cat issuer.pub)'",
+                           "distributor-seed":"'$(cat distributor)'"}'
 ```
 
 `mc --issue-new-token` does several things:
@@ -263,7 +279,10 @@ Setting a trustline is called a "[Change Trust](https://www.stellar.org/develope
 The `--issue-new` options takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
 ``` sh
-$ ./mc --issue-new-token '{"code": "YUM", "issuer-address": "'$(cat issuer.pub)'", "distributor-seed":"'$(cat distributor)'", "limit": "42.0"}'
+$ ./mc --issue-new-token '{"code": "YUM",
+                           "issuer-address": "'$(cat issuer.pub)'",
+                           "distributor-seed":"'$(cat distributor)'",
+                           "limit": "42.0"}'
 ```
 
 ```sh
@@ -306,7 +325,12 @@ To continue the [issuing a new token](#issuing-a-new-token) example, we'll send 
 `stellar-mc` has a `--send-payment` option that takes a JSON map with these keys: `"from", "to", "token", "amount", "issuer"`:
 
 ```sh
-$ ./mc --send-payment '{"from": "'$(cat issuer)'", "to": "'$(cat distributor.pub)'", "token": "YUM", "amount": "42.0", "issuer": "'$(cat issuer.pub)'"}'
+$ ./mc --send-payment '{"from": "'$(cat issuer)'",
+                        "to": "'$(cat distributor.pub)'",
+                        "token": "YUM",
+                        "amount": "42.0",
+                        "issuer": "'$(cat issuer.pub)'"}'
+
 2018/01/30 16:11:56 sending 42.0 YUM from GBW2U2GEWVD7GDTQPPJSDGE4SRYXN3USYZKNNI6EPVHUHROS47S6NUZJ to GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5
 ```
 
@@ -347,20 +371,54 @@ When submitting a transaction to Stellar there are several [transaction options]
 
 To continue the [issuing a new token](#issuing-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
 
-In order to discover information about a particular token Stellar would look at a "home domain" property of an account and then will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "https://home-domain/.well-known/stellar.toml".
+In order to discover information about a particular token Stellar would look at a "home domain" property of an account and then will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "`https://home-domain/.well-known/stellar.toml`".
 
-Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "https://home-domain/.well-known/stellar.toml", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--tx-options`:
+Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--tx-options`:
 
 ```sh
-$ ./mc --new-tx '{"source-account": "'$(cat issuer)'"}' --tx-options '{"home-domain": "dotkam.com"}'
+$ ./mc --new-tx '{"source-account": "'$(cat issuer)'"}' \
+       --tx-options '{"home-domain": "dotkam.com"}'
 ```
 
-and now this link to the domain is there on the blockchain:
+> _will discuss `--new-tx` later as it is still work in progress to include other transaction operations_
+
+and now this link to the domain is there on the Stellar network:
 
 ```sh
 $ ./mc --account-details $(cat issuer.pub) | jq '.home_domain'
 "dotkam.com"
 ```
+### Setting Inflation Destination
+
+Another example of using Stellar transaction options would be setting an inflation destination on the account.
+
+> _The Stellar distributed network has a built-in, fixed, nominal inflation mechanism. New lumens are added to the network at the rate of 1% each year. Each week, the protocol distributes these lumens to any account that gets over .05% of the “votes” from other accounts in the network_ (from [Stellar documentation](https://www.stellar.org/developers/guides/concepts/inflation.html))
+
+Inflation destination can be set via `--tx-options`. For example let's set an inflation destination on the distributor account from the examples above:
+
+```sh
+$ ./mc --new-tx '{"source-account": "'$(cat distributor)'"}' \
+       --tx-options '{"inflation-destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+```
+
+We can combine other options, let's add a home domain as well:
+```sh
+./mc --new-tx '{"source-account": "'$(cat distributor)'"}' \
+     --tx-options '{"home-domain": "dotkam.com",
+                    "inflation-destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+```
+
+and we can check that both options were set successfully:
+
+```sh
+$ ./mc --account-details $(cat distributor.pub) | jq '.home_domain, .inflation_destination'
+"dotkam.com"
+"GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"
+```
+
+Here is a prettier version of the options that were set in this transaction on [testnet.stellarchain.io](http://testnet.stellarchain.io/address/GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5):
+
+<img src="doc/img/tx-options.png">
 
 ## License
 
