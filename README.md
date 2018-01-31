@@ -1,5 +1,8 @@
 # Stellar Mission Control Center
 
+[![Build
+Status](https://travis-ci.org/tolitius/stellar-mc.svg?branch=master)](https://travis-ci.org/tolitius/stellar-mc)
+
 A command line interface to [Stellar](https://www.stellar.org/) network.
 
 - [Why](#why)
