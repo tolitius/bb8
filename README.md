@@ -75,18 +75,18 @@ $ ./stellar-mc --help
 Usage of ./stellar-mc:
   -account-details string
     	load and return account details. example: --account-details address
+  -change-trust string
+    	create, update, or delete a trustline. has a "limit" param which is optional, setting it to "0" removes the trustline example: --change-trust '{"source-account": "seed", "code": "XYZ", "issuer-address": "address", "limit": "42.0"}'
   -fund string
-    	funds a test account. example: --fund address
+    	fund a test account. example: --fund address
   -gen-keys string
-    	creates a pair of keys (in two files "file-path" and "file-path.pub"). example: --gen-keys file-path
-  -issue-new-token string
-    	issue new token/asset. example ("limit" param is optional): --issue-new-token '{"code": "XYZ", "issuer-address": "address", "distributor-seed":"seed", "limit": "42.0"}'
+    	create a pair of keys (in two files "file-path" and "file-path.pub"). example: --gen-keys file-path
   -new-tx string
     	build and submit a new transaction. "operations" and "signers" are optional, if there are no "signers", the "source-account" seed will be used to sign this transaction. example: --new-tx '{"source-account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer-address": "address"}}, "signers": ["seed1", "seed2"]}'
   -send-payment string
     	send payment from one account to another. example: --send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
   -submit-tx string
-    	submits a base64 encoded transaction. example: --submit-tx txn
+    	submit a base64 encoded transaction. example: --submit-tx txn
   -tx-options string
     	add one or more transaction options. example: --tx-options '{"home-domain": "stellar.org", "max-weight": 1, "inflation-destination": "address"}'
 ```
@@ -98,7 +98,7 @@ Every Stellar account has a pair of keys:
 * a public key that is also known as account's `address`
 * a private key that is also known as `seed`
 
-`stellar-mc` has a `--gen-keys` option to generate this pair of keys:
+`stellar-mc` has a `--gen-keys` flag to generate this pair of keys:
 
 ``` sh
 $ ./stellar-mc --gen-keys foo
@@ -120,7 +120,7 @@ It is later used to _sign_ Stellar transactions to confirm that it is "_really y
 
 Stellar has a friendly utility called [Friendbot](https://www.stellar.org/developers/horizon/reference/tutorials/follow-received-payments.html#funding-your-account) that funds a new account on the Stellar test network. When a new account is created (e.g. a pair of keys we created above), this account has no balance and does not exist in the ledger until it is funded. Friendbot fixes that problem.
 
-`stellar-mc` has `--fund` option that takes an account's address and funds it a good amount of lumens:
+`stellar-mc` has `--fund` flag that takes an account's address and funds it a good amount of lumens:
 
 ``` sh
 $ ./stellar-mc --fund $(cat foo.pub)
@@ -130,7 +130,7 @@ here we used a `foo.pub` address that we generated above. Next, we'll look at th
 
 ## Account Details
 
-In order to look at the account in the ledger `stellar-mc` provides an `--account-details` option that takes an account address and returns all the details known to Stellar:
+In order to look at the account in the ledger `stellar-mc` provides an `--account-details` flag that takes an account address and returns all the details known to Stellar:
 
 ```sh
 $ ./stellar-mc --account-details $(cat foo.pub)
@@ -271,15 +271,15 @@ $ ./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
 
 Now we are ready to issue a new token, let's call it `YUM`.
 
-`stellar-mc` has an `--issue-new-token` option that takes a token's code, issuer's address and distributor's seed (to sign the transaction) as JSON:
+`stellar-mc` has an `--change-trust` flag that takes a source account's seed (to sign this transaction), the code of the token and the issuer's address as JSON:
 
 ``` sh
-$ ./stellar-mc --issue-new-token '{"code": "YUM",
-                                   "issuer-address": "'$(cat issuer.pub)'",
-                                   "distributor-seed":"'$(cat distributor)'"}'
+$ ./stellar-mc --change-trust '{"source-account": "'$(cat distributor)'",
+                                "code": "YUM",
+                                "issuer-address": "'$(cat issuer.pub)'"}'
 ```
 
-`stellar-mc --issue-new-token` does several things:
+`stellar-mc --change-trust` does several things:
 
 * creates a new asset (in this case `YUM`)
 * creates a new transaction where it sets a trustline between the receiving account ("distributor") and this asset
@@ -308,17 +308,17 @@ $ ./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
 
 Nice! We have established a trustline for YUMs and almost ready to distribute them to other accounts. Notice the native balance is no longer 10,000 lumens. This is due to the fees the distribution account had to pay: 100 [stroops](https://www.stellar.org/developers/guides/concepts/assets.html#one-stroop-multiple-stroops) for the transaction processing and another 100 stroops for setting up a trustline which is one of the transaction operations.
 
-Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#change-trust)" operation in Stellar speak. By default this operation would allow a distribution account to receive up to `922337203685.4775807` (`MaxInt64  = 1<<63 - 1`) YUMs. But it has an additional `limit` parameter that sets a cap on how much YUMs an account may get.
+Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#change-trust)" operation in Stellar speak. By default this operation would allow a source account to receive up to `922337203685.4775807` (`MaxInt64  = 1<<63 - 1`) YUMs. But it has an additional `limit` parameter that sets a cap on how much YUMs an account may get.
 
 ### Limitting Trustline
 
-The `--issue-new-token` option takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
+The `--change-trust` flag takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
 ``` sh
-$ ./stellar-mc --issue-new-token '{"code": "YUM",
-                                   "issuer-address": "'$(cat issuer.pub)'",
-                                   "distributor-seed":"'$(cat distributor)'",
-                                   "limit": "42.0"}'
+$ ./stellar-mc --change-trust '{"source-account": "'$(cat distributor)'",
+                                "code": "YUM",
+                                "issuer-address": "'$(cat issuer.pub)'",
+                                "limit": "42.0"}'
 ```
 
 ```sh
@@ -358,7 +358,7 @@ In order to send a payment of a non native assset, which is any token on a Stell
 
 To continue the [issuing a new token](#issuing-a-new-token) example, we'll send `42.0` YUMs from the issuer to distributor.
 
-`stellar-mc` has a `--send-payment` option that takes a JSON map with these keys: `"from", "to", "token", "amount", "issuer"`:
+`stellar-mc` has a `--send-payment` flag that takes a JSON map with these keys: `"from", "to", "token", "amount", "issuer"`:
 
 ```sh
 $ ./stellar-mc --send-payment '{"from": "'$(cat issuer)'",
@@ -395,15 +395,15 @@ Here is the prettier version of `42.0` YUMs on [testnet.stellarchain.io](http://
 
 Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has YUMs to send. The reason it was the issuer in the example above is that it was the only account that had YUMs. The issuer's public key though should still be used to identify the asset: "this YUM token you are getting was indeed signed by me".
 
-Excellent, we are now ready to distribute YUMs. We can use the same `--send-payment` option with different account addresses to do that.
+Excellent, we are now ready to distribute YUMs. We can use the same `--send-payment` flag with different account addresses to do that.
 
 ## Transaction Options
 
 When submitting a transaction to Stellar there are several [transaction options](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#set-options) that could be set.
 
-`stellar-mc` has a `--tx-options` option that takes these options as JSON and sets them on a transaction before it is submitted.
+`stellar-mc` has a `--tx-options` flag that takes these options as JSON and sets them on a transaction before it is submitted.
 
-It can also be combined with `--send-payment`, `--issue-new-token`, `--new-tx` and any other transactions.
+It can also be combined with `--send-payment`, `--change-trust`, `--new-tx` and any other transactions.
 
 ### Adding Discoverablity and Meta Information
 

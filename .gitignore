@@ -6,7 +6,9 @@
 issuer*
 distributor*
 foo*
-mc
+bar*
+baz*
+stellar-mc
 dist/
 
 

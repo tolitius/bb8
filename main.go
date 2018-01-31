@@ -194,26 +194,26 @@ func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 	return tx
 }
 
-type newToken struct {
-	IssuerAddress   string `json:"issuer-address"`
-	DistributorSeed string `json:"distributor-seed"`
-	Code, Limit     string
+type changeTrust struct {
+	SourceAccount string `json:"source-account"`
+	IssuerAddress string `json:"issuer-address"`
+	Code, Limit   string
 }
 
-func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
+func (ct *changeTrust) set(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
 
-	distributor := seedToPair(t.DistributorSeed)
+	source := seedToPair(ct.SourceAccount)
 
 	var limit = b.MaxLimit
-	if t.Limit != "" {
-		limit = b.Limit(t.Limit)
+	if ct.Limit != "" {
+		limit = b.Limit(ct.Limit)
 	}
 
 	tx, err := b.Transaction(
-		b.SourceAccount{distributor.Address()},
+		b.SourceAccount{source.Address()},
 		b.AutoSequence{conf.client},
 		conf.network,
-		b.Trust(t.Code, t.IssuerAddress, limit),
+		b.Trust(ct.Code, ct.IssuerAddress, limit),
 		txOptions,
 	)
 
@@ -293,16 +293,16 @@ func main() {
 	var fund string
 	var keyFpath string
 	var txToSubmit string
-	var issueToken string
+	var setTrustline string
 	var sendPayment string
 	var txOptions string
 	var accountDetails string
 	var buildTransaction string
 
-	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
-	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
-	flag.StringVar(&txToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
-	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token/asset. example (\"limit\" param is optional): --issue-new-token '{\"code\": \"XYZ\", \"issuer-address\": \"address\", \"distributor-seed\":\"seed\", \"limit\": \"42.0\"}'")
+	flag.StringVar(&fund, "fund", "", "fund a test account. example: --fund address")
+	flag.StringVar(&keyFpath, "gen-keys", "", "create a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
+	flag.StringVar(&txToSubmit, "submit-tx", "", "submit a base64 encoded transaction. example: --submit-tx txn")
+	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline example: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
 	flag.StringVar(&accountDetails, "account-details", "", "load and return account details. example: --account-details address")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
@@ -333,13 +333,13 @@ func main() {
 		}
 		tx := payment.send(conf, txOptionsBuilder)
 		submitTransaction(conf.client, tx, payment.From)
-	case issueToken != "":
-		nt := &newToken{}
-		if err := json.Unmarshal([]byte(issueToken), nt); err != nil {
+	case setTrustline != "":
+		ct := &changeTrust{}
+		if err := json.Unmarshal([]byte(setTrustline), ct); err != nil {
 			log.Fatal(err)
 		}
-		tx := nt.issueNew(conf, txOptionsBuilder)
-		submitTransaction(conf.client, tx, nt.DistributorSeed)
+		tx := ct.set(conf, txOptionsBuilder)
+		submitTransaction(conf.client, tx, ct.SourceAccount)
 	case buildTransaction != "":
 		nt := &newTransaction{}
 		if err := json.Unmarshal([]byte(buildTransaction), nt); err != nil {
@@ -354,7 +354,7 @@ func main() {
 		submitTransaction(conf.client, tx, signers...)
 	default:
 		if txOptions != "" {
-			fmt.Printf("options: %+v", txOptionsBuilder)
+			fmt.Errorf("\"--tx-options\" can't be used by itself, it is an additional flag that should be used with other flags that build transactions: i.e. \"--send-payment ... --tx-options ...\" or \"--change-trust ... --tx-options ...\"")
 		} else {
 			flag.PrintDefaults()
 		}
