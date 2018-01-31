@@ -21,8 +21,24 @@ type config struct {
 	network b.Network
 }
 
+func structValues(s interface{}) []interface{} {
+
+	v := reflect.ValueOf(s)
+
+	values := make([]interface{}, 0)
+
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.IsNil() {
+			values = append(values, f.Interface())
+		}
+	}
+
+	return values
+}
+
 func readConfig(cpath string) *config {
-	//TODO: read config from cpath
+	//TODO: read config from cpath / ENV
 
 	return &config{
 		client:  horizon.DefaultTestNetClient,
@@ -126,13 +142,13 @@ func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
 	return resp.Ledger
 }
 
-func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed string) int32 {
+func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed ...string) int32 {
 
 	var txe b.TransactionEnvelopeBuilder
 	var err error
 
-	if seed != "" {
-		txe, err = txn.Sign(seed)
+	if len(seed) > 0 {
+		txe, err = txn.Sign(seed...)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -208,18 +224,20 @@ func (t *newToken) issueNew(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 	return tx
 }
 
+type newTransaction struct {
+	Operations    txOperations
+	SourceAccount string `json:"source-account"`
+	Signers       []string
+}
+
 type txOperations struct {
-	SourceAccount *b.SourceAccount `json:"source-account"`
+	SourceAccount *b.SourceAccount
 	//TODO: add all transaction operations
 }
 
-func (t *txOperations) parse(operations string) []b.TransactionMutator {
-	topts := &txOperations{}
-	if err := json.Unmarshal([]byte(operations), topts); err != nil {
-		log.Fatal(err)
-	}
+func (t *txOperations) toMutators() []b.TransactionMutator {
 
-	values := structValues(*topts)
+	values := structValues(*t)
 	muts := make([]b.TransactionMutator, len(values))
 
 	for i := 0; i < len(values); i++ {
@@ -234,9 +252,12 @@ func (t *txOperations) parse(operations string) []b.TransactionMutator {
 	return muts
 }
 
-func (t *txOperations) buildTransaction(conf *config, operations []b.TransactionMutator, options b.SetOptionsBuilder) *b.TransactionBuilder {
+func (t *txOperations) buildTransaction(
+	conf *config,
+	options b.SetOptionsBuilder) *b.TransactionBuilder {
 
 	tx, err := b.Transaction(
+		t.SourceAccount,
 		conf.network,
 		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
 		options)
@@ -245,31 +266,16 @@ func (t *txOperations) buildTransaction(conf *config, operations []b.Transaction
 		log.Fatal(err)
 	}
 
-	tx.Mutate(operations...)
+	tx.Mutate(t.toMutators()...)
 
 	return tx
 }
 
 type txOptions struct {
-	HomeDomain   *b.HomeDomain   `json:"home-domain"`
-	MasterWeight *b.MasterWeight `json:"master-weight"`
+	HomeDomain    *b.HomeDomain    `json:"home-domain"`
+	MasterWeight  *b.MasterWeight  `json:"master-weight"`
+	InflationDest *b.InflationDest `json:"inflation-destination"`
 	//TODO: add all transaction options
-}
-
-func structValues(s interface{}) []interface{} {
-
-	v := reflect.ValueOf(s)
-
-	values := make([]interface{}, 0)
-
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		if !f.IsNil() {
-			values = append(values, f.Interface())
-		}
-	}
-
-	return values
 }
 
 func parseOptions(options string) b.SetOptionsBuilder {
@@ -291,15 +297,16 @@ func main() {
 	var sendPayment string
 	var txOptions string
 	var accountDetails string
-	// var buildTransaction string
+	var buildTransaction string
 
 	flag.StringVar(&fund, "fund", "", "funds a test account. example: --fund address")
 	flag.StringVar(&keyFpath, "gen-keys", "", "creates a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
 	flag.StringVar(&txToSubmit, "submit-tx", "", "submits a base64 encoded transaction. example: --submit-tx txn")
 	flag.StringVar(&issueToken, "issue-new-token", "", "issue new token/asset. example (\"limit\" param is optional): --issue-new-token '{\"code\": \"XYZ\", \"issuer-address\": \"address\", \"distributor-seed\":\"seed\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
-	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"homeDomain\": \"stellar.org\", \"maxWeight\": 1}'")
 	flag.StringVar(&accountDetails, "account-details", "", "load and return account details. example: --account-details address")
+	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
+	flag.StringVar(&buildTransaction, "new-tx", "", "build and submit a new transaction. \"operations\" and \"signers\" are optional, if there are no \"signers\", the \"source-account\" seed will be used to sign this transaction. example: --new-tx '{\"source-account\": \"address or seed\", {\"operations\": \"trust\": {\"code\": \"XYZ\", \"issuer-address\": \"address\"}}, \"signers\": [\"seed1\", \"seed2\"]}'")
 
 	flag.Parse()
 
@@ -333,6 +340,18 @@ func main() {
 		}
 		tx := nt.issueNew(conf, txOptionsBuilder)
 		submitTransaction(conf.client, tx, nt.DistributorSeed)
+	case buildTransaction != "":
+		nt := &newTransaction{}
+		if err := json.Unmarshal([]byte(buildTransaction), nt); err != nil {
+			log.Fatal(err)
+		}
+		nt.Operations.SourceAccount = &b.SourceAccount{nt.SourceAccount}
+		tx := nt.Operations.buildTransaction(conf, txOptionsBuilder)
+		signers := nt.Signers
+		if signers == nil {
+			signers = []string{nt.SourceAccount}
+		}
+		submitTransaction(conf.client, tx, signers...)
 	default:
 		if txOptions != "" {
 			fmt.Printf("options: %+v", txOptionsBuilder)

@@ -28,12 +28,14 @@ Usage of ./mc:
     	creates a pair of keys (in two files "file-path" and "file-path.pub"). example: --gen-keys file-path
   -issue-new-token string
     	issue new token/asset. example ("limit" param is optional): --issue-new-token '{"code": "XYZ", "issuer-address": "address", "distributor-seed":"seed", "limit": "42.0"}'
+  -new-tx string
+    	build and submit a new transaction. "operations" and "signers" are optional, if there are no "signers", the "source-account" seed will be used to sign this transaction. example: --new-tx '{"source-account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer-address": "address"}}, "signers": ["seed1", "seed2"]}'
   -send-payment string
     	send payment from one account to another. example: --send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
   -submit-tx string
     	submits a base64 encoded transaction. example: --submit-tx txn
   -tx-options string
-    	add one or more transaction options. example: --tx-options '{"homeDomain": "stellar.org", "maxWeight": 1}'
+    	add one or more transaction options. example: --tx-options '{"home-domain": "stellar.org", "max-weight": 1, "inflation-destination": "address"}'
 ```
 
 ## Create Account Keys
@@ -345,7 +347,20 @@ When submitting a transaction to Stellar there are several [transaction options]
 
 To continue the [issuing a new token](#issuing-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
 
-In order to discover information about a particular token Stellar would look at a "home domain" property of an account
+In order to discover information about a particular token Stellar would look at a "home domain" property of an account and then will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "https://home-domain/.well-known/stellar.toml".
+
+Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "https://home-domain/.well-known/stellar.toml", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--tx-options`:
+
+```sh
+$ ./mc --new-tx '{"source-account": "'$(cat issuer)'"}' --tx-options '{"home-domain": "dotkam.com"}'
+```
+
+and now this link to the domain is there on the blockchain:
+
+```sh
+$ ./mc --account-details $(cat issuer.pub) | jq '.home_domain'
+"dotkam.com"
+```
 
 ## License
 
