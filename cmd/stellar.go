@@ -5,6 +5,7 @@ import (
 	"os"
 
 	b "github.com/stellar/go/build"
+	"github.com/stellar/go/keypair"
 
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/horizon"
@@ -33,6 +34,7 @@ func AddCommands() {
 	StellarCmd.AddCommand(fundCmd)
 	StellarCmd.AddCommand(loadAccountCmd)
 	StellarCmd.AddCommand(submitTransactionCmd)
+	StellarCmd.AddCommand(changeTrustCmd)
 }
 
 // Execute adds sub commands to StellarCmd and sets all the command line flags
@@ -48,6 +50,16 @@ func Execute() {
 		c.Println(c.UsageString())
 		os.Exit(-1)
 	}
+}
+
+func seedToPair(seed string) keypair.KP {
+
+	kp, err := keypair.Parse(seed)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return kp
 }
 
 func getEnv(key, fallback string) string {

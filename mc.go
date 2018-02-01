@@ -135,36 +135,6 @@ func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 	return tx
 }
 
-type changeTrust struct {
-	SourceAccount string `json:"source-account"`
-	IssuerAddress string `json:"issuer-address"`
-	Code, Limit   string
-}
-
-func (ct *changeTrust) set(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
-
-	source := seedToPair(ct.SourceAccount)
-
-	var limit = b.MaxLimit
-	if ct.Limit != "" {
-		limit = b.Limit(ct.Limit)
-	}
-
-	tx, err := b.Transaction(
-		b.SourceAccount{source.Address()},
-		b.AutoSequence{conf.client},
-		conf.network,
-		b.Trust(ct.Code, ct.IssuerAddress, limit),
-		txOptions,
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tx
-}
-
 type newTransaction struct {
 	Operations    txOperations
 	SourceAccount string `json:"source-account"`

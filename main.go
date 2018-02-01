@@ -59,13 +59,11 @@ func main() {
 
 	cmd.Execute()
 
-	var setTrustline string
 	var sendPayment string
 	var txOptions string
 	var buildTransaction string
 	var stream string
 
-	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline\n    \texample: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another.\n    \texample: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options.\n    \texample: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
 	flag.StringVar(&buildTransaction, "new-tx", "", "build and submit a new transaction. \"operations\" and \"signers\" are optional, if there are no \"signers\", the \"source-account\" seed will be used to sign this transaction.\n    \texample: --new-tx '{\"source-account\": \"address or seed\", {\"operations\": \"trust\": {\"code\": \"XYZ\", \"issuer-address\": \"address\"}}, \"signers\": [\"seed1\", \"seed2\"]}'")
@@ -88,13 +86,6 @@ func main() {
 		}
 		tx := payment.send(conf, txOptionsBuilder)
 		submitTransaction(conf.client, tx, payment.From)
-	case setTrustline != "":
-		ct := &changeTrust{}
-		if err := json.Unmarshal([]byte(setTrustline), ct); err != nil {
-			log.Fatal(err)
-		}
-		tx := ct.set(conf, txOptionsBuilder)
-		submitTransaction(conf.client, tx, ct.SourceAccount)
 	case buildTransaction != "":
 		nt := &newTransaction{}
 		if err := json.Unmarshal([]byte(buildTransaction), nt); err != nil {
