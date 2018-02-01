@@ -32,6 +32,7 @@ func AddCommands() {
 	StellarCmd.AddCommand(genKeysCmd)
 	StellarCmd.AddCommand(fundCmd)
 	StellarCmd.AddCommand(loadAccountCmd)
+	StellarCmd.AddCommand(submitTransactionCmd)
 }
 
 // Execute adds sub commands to StellarCmd and sets all the command line flags

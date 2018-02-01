@@ -59,14 +59,12 @@ func main() {
 
 	cmd.Execute()
 
-	var txToSubmit string
 	var setTrustline string
 	var sendPayment string
 	var txOptions string
 	var buildTransaction string
 	var stream string
 
-	flag.StringVar(&txToSubmit, "submit-tx", "", "submit a base64 encoded transaction.\n    \texample: --submit-tx txn")
 	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline\n    \texample: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another.\n    \texample: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options.\n    \texample: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
@@ -83,8 +81,6 @@ func main() {
 	}
 
 	switch {
-	case txToSubmit != "":
-		submitTransactionB64(conf.client, txToSubmit)
 	case sendPayment != "":
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
