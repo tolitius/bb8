@@ -13,10 +13,10 @@ const (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "print the version number of stellar mc",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		printStellarMcVersion()
-		return nil
 	},
+	DisableFlagsInUseLine: true,
 }
 
 func printStellarMcVersion() {

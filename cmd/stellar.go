@@ -9,7 +9,7 @@ import (
 // StellarCmd is Stellar Mission Control Center's root command.
 // Other commands are added to StellarCmd as subcommands.
 var StellarCmd = &cobra.Command{
-	Use:   "stellar",
+	Use:   "stellar-mc",
 	Short: "cli to interact with Stellar network",
 	Long:  `stellar is a command line interface to Stellar (https://www.stellar.org/) networks.`,
 }
@@ -17,6 +17,7 @@ var StellarCmd = &cobra.Command{
 // AddCommands adds sub commands to StellarCmd
 func AddCommands() {
 	StellarCmd.AddCommand(versionCmd)
+	StellarCmd.AddCommand(genKeysCmd)
 }
 
 // Execute adds sub commands to StellarCmd and sets all the command line flags

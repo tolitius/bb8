@@ -60,7 +60,6 @@ func main() {
 	cmd.Execute()
 
 	var fund string
-	var keyFpath string
 	var txToSubmit string
 	var setTrustline string
 	var sendPayment string
@@ -70,7 +69,6 @@ func main() {
 	var stream string
 
 	flag.StringVar(&fund, "fund", "", "fund a test account.\n    \texample: --fund address")
-	flag.StringVar(&keyFpath, "gen-keys", "", "create a pair of keys (in two files \"file-path\" and \"file-path.pub\").\n    \texample: --gen-keys file-path")
 	flag.StringVar(&txToSubmit, "submit-tx", "", "submit a base64 encoded transaction.\n    \texample: --submit-tx txn")
 	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline\n    \texample: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another.\n    \texample: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
@@ -91,8 +89,6 @@ func main() {
 	switch {
 	case fund != "":
 		fundTestAccount(conf.client, fund)
-	case keyFpath != "":
-		createNewKeys(keyFpath)
 	case txToSubmit != "":
 		submitTransactionB64(conf.client, txToSubmit)
 	case accountDetails != "":
@@ -130,8 +126,9 @@ func main() {
 	default:
 		if txOptions != "" {
 			fmt.Errorf("\"--tx-options\" can't be used by itself, it is an additional flag that should be used with other flags that build transactions: i.e. \"--send-payment ... --tx-options ...\" or \"--change-trust ... --tx-options ...\"")
-		} else {
-			flag.PrintDefaults()
+			// } else {
+			// 	flag.PrintDefaults()
+			//
 		}
 	}
 }

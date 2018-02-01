@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 	"time"
 
@@ -48,36 +46,6 @@ func toJSON(foo interface{}) string {
 		log.Fatal("error:", err)
 	}
 	return string(b)
-}
-
-func createNewKeys(fpath string) string {
-	pair, err := keypair.Random()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fpub, err := os.Create(fpath + ".pub")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fseed, err := os.Create(fpath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer fpub.Close()
-	defer fseed.Close()
-
-	fmt.Fprint(fpub, pair.Address())
-	fmt.Fprint(fseed, pair.Seed())
-
-	fpub.Sync()
-	fseed.Sync()
-
-	log.Printf("keys are created and stored in: %s and %s\n", fpub.Name(), fseed.Name())
-
-	return fpath
 }
 
 func loadAccount(stellar *horizon.Client, address string) horizon.Account {
