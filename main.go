@@ -59,20 +59,16 @@ func main() {
 
 	cmd.Execute()
 
-	var fund string
 	var txToSubmit string
 	var setTrustline string
 	var sendPayment string
 	var txOptions string
-	var accountDetails string
 	var buildTransaction string
 	var stream string
 
-	flag.StringVar(&fund, "fund", "", "fund a test account.\n    \texample: --fund address")
 	flag.StringVar(&txToSubmit, "submit-tx", "", "submit a base64 encoded transaction.\n    \texample: --submit-tx txn")
 	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline\n    \texample: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
 	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another.\n    \texample: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
-	flag.StringVar(&accountDetails, "account-details", "", "load and return account details.\n    \texample: --account-details address")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options.\n    \texample: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
 	flag.StringVar(&buildTransaction, "new-tx", "", "build and submit a new transaction. \"operations\" and \"signers\" are optional, if there are no \"signers\", the \"source-account\" seed will be used to sign this transaction.\n    \texample: --new-tx '{\"source-account\": \"address or seed\", {\"operations\": \"trust\": {\"code\": \"XYZ\", \"issuer-address\": \"address\"}}, \"signers\": [\"seed1\", \"seed2\"]}'")
 	flag.StringVar(&stream, "stream", "", "stream Stellar \"ledger\", \"payments\" and \"tranasaction\" events with optional \"-s\" (seconds) and \"-c\" (cursor) subflags.\n    \texample: --stream ledger\n     \t\t--stream payments -s 42 -c now")
@@ -87,12 +83,8 @@ func main() {
 	}
 
 	switch {
-	case fund != "":
-		fundTestAccount(conf.client, fund)
 	case txToSubmit != "":
 		submitTransactionB64(conf.client, txToSubmit)
-	case accountDetails != "":
-		fmt.Println(toJSON(loadAccount(conf.client, accountDetails)))
 	case sendPayment != "":
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {

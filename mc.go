@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"reflect"
 	"time"
 
@@ -38,43 +36,6 @@ func seedToPair(seed string) keypair.KP {
 	}
 
 	return kp
-}
-
-func toJSON(foo interface{}) string {
-	b, err := json.MarshalIndent(foo, "", "  ")
-	if err != nil {
-		log.Fatal("error:", err)
-	}
-	return string(b)
-}
-
-func loadAccount(stellar *horizon.Client, address string) horizon.Account {
-
-	account, err := stellar.LoadAccount(address)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return account
-}
-
-func fundTestAccount(stellar *horizon.Client, address string) {
-
-	resp, err := http.Get(stellar.URL + "/friendbot?addr=" + address)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if resp.StatusCode != 200 {
-		log.Fatalf("could not fund %s, horizon said: %s\n", address, string(body))
-	}
 }
 
 type ledgerStreamer struct {

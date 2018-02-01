@@ -1,10 +1,22 @@
 package cmd
 
 import (
+	"log"
 	"os"
 
+	b "github.com/stellar/go/build"
+
 	"github.com/spf13/cobra"
+	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/network"
 )
+
+type config struct {
+	client  *horizon.Client
+	network b.Network
+}
+
+var conf *config
 
 // StellarCmd is Stellar Mission Control Center's root command.
 // Other commands are added to StellarCmd as subcommands.
@@ -18,12 +30,15 @@ var StellarCmd = &cobra.Command{
 func AddCommands() {
 	StellarCmd.AddCommand(versionCmd)
 	StellarCmd.AddCommand(genKeysCmd)
+	StellarCmd.AddCommand(fundCmd)
+	StellarCmd.AddCommand(loadAccountCmd)
 }
 
 // Execute adds sub commands to StellarCmd and sets all the command line flags
 func Execute() {
 
 	StellarCmd.SilenceUsage = true
+	conf = readConfig("tmp/todo")
 
 	AddCommands()
 
@@ -32,4 +47,39 @@ func Execute() {
 		c.Println(c.UsageString())
 		os.Exit(-1)
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+func readConfig(cpath string) *config {
+
+	/*TODO: add custom network support
+	&config{
+		client: &http.Client{
+			URL:  customNetworkURL
+			HTTP: http.DefaultClient,
+		}
+
+		network: b.Network{customPassphrase}}
+	*/
+
+	switch snet := getEnv("STELLAR_NETWORK", "test"); snet {
+	case "public":
+		return &config{
+			client:  horizon.DefaultPublicNetClient,
+			network: b.Network{network.PublicNetworkPassphrase}}
+	case "test":
+		return &config{
+			client:  horizon.DefaultTestNetClient,
+			network: b.Network{network.TestNetworkPassphrase}}
+	default:
+		log.Fatalf("Unknown Stellar network: \"%s\". Stellar network is set by the \"STELLAR_NETWORK\" environment variable. Possible values are \"public\", \"test\". An unset \"STELLAR_NETWORK\" is treated as \"test\".", snet)
+	}
+
+	return nil
 }
