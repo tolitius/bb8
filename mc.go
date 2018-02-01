@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"time"
 
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -40,6 +42,14 @@ func seedToPair(seed string) keypair.KP {
 	return kp
 }
 
+func toJSON(foo interface{}) string {
+	b, err := json.MarshalIndent(foo, "", "  ")
+	if err != nil {
+		log.Fatal("error:", err)
+	}
+	return string(b)
+}
+
 func createNewKeys(fpath string) string {
 	pair, err := keypair.Random()
 	if err != nil {
@@ -70,14 +80,6 @@ func createNewKeys(fpath string) string {
 	return fpath
 }
 
-func toJSON(foo interface{}) string {
-	b, err := json.MarshalIndent(foo, "", "  ")
-	if err != nil {
-		log.Fatal("error:", err)
-	}
-	return string(b)
-}
-
 func loadAccount(stellar *horizon.Client, address string) horizon.Account {
 
 	account, err := stellar.LoadAccount(address)
@@ -104,6 +106,31 @@ func fundTestAccount(stellar *horizon.Client, address string) {
 
 	if resp.StatusCode != 200 {
 		log.Fatalf("could not fund %s, horizon said: %s\n", address, string(body))
+	}
+}
+
+type ledgerStreamer struct {
+	Seconds int64
+	Cursor  horizon.Cursor
+	handler horizon.LedgerHandler
+}
+
+func (streamer *ledgerStreamer) streamLedger(stellar *horizon.Client) {
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if streamer.Seconds != 0 {
+		go func() {
+			time.Sleep(time.Duration(streamer.Seconds) * time.Second)
+			cancel()
+		}()
+	}
+
+	err := stellar.StreamLedgers(ctx, &streamer.Cursor, streamer.handler)
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 

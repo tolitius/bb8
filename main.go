@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 
+	"stellar-mc/cmd"
+
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/network"
@@ -54,6 +56,9 @@ func readConfig(cpath string) *config {
 
 // ./mc --gen-keys foo; ./mc --fund $(cat foo.pub)
 func main() {
+
+	cmd.Execute()
+
 	var fund string
 	var keyFpath string
 	var txToSubmit string
@@ -62,15 +67,17 @@ func main() {
 	var txOptions string
 	var accountDetails string
 	var buildTransaction string
+	var stream string
 
-	flag.StringVar(&fund, "fund", "", "fund a test account. example: --fund address")
-	flag.StringVar(&keyFpath, "gen-keys", "", "create a pair of keys (in two files \"file-path\" and \"file-path.pub\"). example: --gen-keys file-path")
-	flag.StringVar(&txToSubmit, "submit-tx", "", "submit a base64 encoded transaction. example: --submit-tx txn")
-	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline example: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
-	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another. example: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
-	flag.StringVar(&accountDetails, "account-details", "", "load and return account details. example: --account-details address")
-	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options. example: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
-	flag.StringVar(&buildTransaction, "new-tx", "", "build and submit a new transaction. \"operations\" and \"signers\" are optional, if there are no \"signers\", the \"source-account\" seed will be used to sign this transaction. example: --new-tx '{\"source-account\": \"address or seed\", {\"operations\": \"trust\": {\"code\": \"XYZ\", \"issuer-address\": \"address\"}}, \"signers\": [\"seed1\", \"seed2\"]}'")
+	flag.StringVar(&fund, "fund", "", "fund a test account.\n    \texample: --fund address")
+	flag.StringVar(&keyFpath, "gen-keys", "", "create a pair of keys (in two files \"file-path\" and \"file-path.pub\").\n    \texample: --gen-keys file-path")
+	flag.StringVar(&txToSubmit, "submit-tx", "", "submit a base64 encoded transaction.\n    \texample: --submit-tx txn")
+	flag.StringVar(&setTrustline, "change-trust", "", "create, update, or delete a trustline. has a \"limit\" param which is optional, setting it to \"0\" removes the trustline\n    \texample: --change-trust '{\"source-account\": \"seed\", \"code\": \"XYZ\", \"issuer-address\": \"address\", \"limit\": \"42.0\"}'")
+	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another.\n    \texample: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
+	flag.StringVar(&accountDetails, "account-details", "", "load and return account details.\n    \texample: --account-details address")
+	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options.\n    \texample: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
+	flag.StringVar(&buildTransaction, "new-tx", "", "build and submit a new transaction. \"operations\" and \"signers\" are optional, if there are no \"signers\", the \"source-account\" seed will be used to sign this transaction.\n    \texample: --new-tx '{\"source-account\": \"address or seed\", {\"operations\": \"trust\": {\"code\": \"XYZ\", \"issuer-address\": \"address\"}}, \"signers\": [\"seed1\", \"seed2\"]}'")
+	flag.StringVar(&stream, "stream", "", "stream Stellar \"ledger\", \"payments\" and \"tranasaction\" events with optional \"-s\" (seconds) and \"-c\" (cursor) subflags.\n    \texample: --stream ledger\n     \t\t--stream payments -s 42 -c now")
 
 	flag.Parse()
 
@@ -116,6 +123,10 @@ func main() {
 			signers = []string{nt.SourceAccount}
 		}
 		submitTransaction(conf.client, tx, signers...)
+	case stream != "":
+		// opts := streamFlag.Parse(os.Args[3:])
+		// fmt.Printf("stream opts: %+v", opts)
+		fmt.Println("here")
 	default:
 		if txOptions != "" {
 			fmt.Errorf("\"--tx-options\" can't be used by itself, it is an additional flag that should be used with other flags that build transactions: i.e. \"--send-payment ... --tx-options ...\" or \"--change-trust ... --tx-options ...\"")
