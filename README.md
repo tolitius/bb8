@@ -9,6 +9,7 @@ A command line interface to [Stellar](https://www.stellar.org/) network.
 - [Installation](#installation)
   - [Download, Unpack, Go](#download-unpack-go)
   - [Or just Go](#or-just-go)
+- [Choosing Stellar Network](#choosing-stellar-network)
 - [Buttons to Push](#buttons-to-push)
 - [Create Account Keys](#create-account-keys)
 - [Funding a Test Account](#funding-a-test-account)
@@ -68,10 +69,21 @@ $ $GOBIN/stellar-mc --help
 
 Or clone the repo and `go build` it if you prefer a bare minimum.
 
-## Buttons to Push
+## Choosing Stellar Network
 
-By default stellar-mc is using [Stellar](https://www.stellar.org/) test network a.k.a. testnet.
-> _//TODO: add a note about switching between networks_
+By default `stellar-mc` uses the Stellar [test network](https://www.stellar.org/developers/guides/concepts/test-net.html) a.k.a. testnet.
+
+In case the work needs to be done on the Stellar public network a `STELLAR_NETWORK` environment variable should be set to "`public`":
+
+```sh
+$ export STELLAR_NETWORK=public
+```
+
+If `STELLAR_NETWORK` is unset or is set to "`test`" a testnet will be used.
+
+> _TODO: add support for custom / private Stellar networks (URL + passphrase)_
+
+## Buttons to Push
 
 ``` sh
 $ ./stellar-mc --help
