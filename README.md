@@ -13,7 +13,9 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 - [Choosing Stellar Network](#choosing-stellar-network)
 - [Buttons to Push](#buttons-to-push)
 - [Create Account Keys](#create-account-keys)
-- [Funding a Test Account](#funding-a-test-account)
+- [Create Account](#create-account)
+  - [Funding Test Account](#funding-test-account)
+  - [Creating New Account](#creating-new-account)
 - [Account Details](#account-details)
 - [Issuing a New Token](#issuing-a-new-token)
   - [Issuer and Distributor](#issuer-and-distributor)
@@ -197,7 +199,24 @@ seed: SAWDCNZF7Y67RWT5FC6YSAHFRH23OFU2OFYFXFNWYETL7S7J72CWK6JG
 An account `seed` should be kept private, hence the "`private`" key.
 It is later used to _sign_ Stellar transactions to confirm that it is "_really you_" and "_you approve_" the transaction.
 
-## Funding a Test Account
+## Create Account
+
+Once the account keys are generated there are two ways to create / record an account in the Stellar ledger:
+
+* Using an existing account by sending a small token amount to a new account address
+* Using Stellar's Friendbot to fund a new _test_ account address on the testnet
+
+### Creating New Account
+
+BB-8 has `create-account` command that takes a source account's seed, a new account address, an initial amount and creates a new account:
+
+```sh
+$ bb create-account '{"source_account":"'$(cat foo)'", "new_account":"'$(cat bar.pub)'", "amount":"1.5"}'
+```
+
+will create a new "bar" account by sending 1.5 XLM to it from an account "foo".
+
+### Funding Test Account
 
 Stellar has a friendly utility called [Friendbot](https://www.stellar.org/developers/horizon/reference/tutorials/follow-received-payments.html#funding-your-account) that funds a new account on the Stellar test network. When a new account is created (e.g. a pair of keys we created above), this account has no balance and does not exist in the ledger until it is funded. Friendbot fixes that problem.
 

@@ -1,5 +1,5 @@
 # .goreleaser.yml
-# Build customization
+
 builds:
   - main: main.go
     binary: bb
@@ -9,8 +9,18 @@ builds:
       - linux
     goarch:
       - amd64
-# Archive customization
+
 archive:
   format: tar.gz
   replacements:
     darwin: macOS
+
+brew:
+  github:
+    owner: tolitius
+    name: bb8
+  folder: Formula
+  homepage: "https://github.com/tolitius/bb8"
+  description: "a command line interface to Stellar networks"
+  install: |
+    bin.install "bb"

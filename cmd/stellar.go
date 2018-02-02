@@ -39,6 +39,7 @@ func AddCommands() {
 	StellarCmd.AddCommand(sendPaymentCmd)
 	StellarCmd.AddCommand(newTransactionCmd)
 	StellarCmd.AddCommand(streamCmd)
+	StellarCmd.AddCommand(createAccountCmd)
 }
 
 func init() {
