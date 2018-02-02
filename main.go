@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tolitius/stellar-mc/cmd"
+	"github.com/tolitius/bb8/cmd"
 )
 
 func main() {

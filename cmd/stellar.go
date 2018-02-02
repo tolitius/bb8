@@ -23,7 +23,7 @@ var conf *config
 // StellarCmd is Stellar Mission Control Center's root command.
 // Other commands are added to StellarCmd as subcommands.
 var StellarCmd = &cobra.Command{
-	Use:   "stellar-mc",
+	Use:   "bb",
 	Short: "cli to interact with Stellar network",
 	Long:  `stellar is a command line interface to Stellar (https://www.stellar.org/) networks.`,
 }
