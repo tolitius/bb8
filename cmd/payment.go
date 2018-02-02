@@ -19,18 +19,11 @@ example: send-payment '{"from": "seed", "to": "address", "token": "XLM", "amount
          notice there is no issuer when sending XLM since it's a native asset.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
-		//TODO: add transactionOptionsFlag
-		var txOptionsBuilder b.SetOptionsBuilder
-		// if txOptionsFlag != "" {
-		// 	txOptionsBuilder = parseOptions(txOptions)
-		// }
-
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(args[0]), payment); err != nil {
 			log.Fatal(err)
 		}
-		tx := payment.send(conf, txOptionsBuilder)
+		tx := payment.send(conf, parseOptions(txOptionsFlag))
 		submitTransaction(conf.client, tx, payment.From)
 	},
 	DisableFlagsInUseLine: true,

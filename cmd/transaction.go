@@ -9,34 +9,31 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
+var txOptionsFlag string
+
 var newTransactionCmd = &cobra.Command{
 	Use:   "new-tx [args]",
 	Short: "build and submit a new transaction",
 	Long: `build and submit a new transaction. this command takes parameters in JSON.
 "operations" and "signers" are optional, if there are no "signers", the "source_account" seed will be used to sign this transaction.
-example: --new-tx '{"source_account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer_address": "address"}}, "signers": ["seed1", "seed2"]}'`,
-	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
 
-		//TODO: add transactionOptionsFlag
-		var txOptionsBuilder b.SetOptionsBuilder
-		// if txOptionsFlag != "" {
-		// 	txOptionsBuilder = parseOptions(txOptions)
-		// }
+example: new-tx '{"source_account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer_address": "address"}}, "signers": ["seed1", "seed2"]}'
+         new-tx '{"source_account": "address or seed"}' --set-options '{"home_domain": "stellar.org", "max_weight": 1}'`,
+	Args: cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
 
 		nt := &newTransaction{}
 		if err := json.Unmarshal([]byte(args[0]), nt); err != nil {
 			log.Fatal(err)
 		}
 		nt.Operations.SourceAccount = &b.SourceAccount{nt.SourceAccount}
-		tx := nt.Operations.buildTransaction(conf, txOptionsBuilder)
+		tx := nt.Operations.buildTransaction(conf, parseOptions(txOptionsFlag))
 		signers := nt.Signers
 		if signers == nil {
 			signers = []string{nt.SourceAccount}
 		}
 		submitTransaction(conf.client, tx, signers...)
 	},
-	DisableFlagsInUseLine: true,
 }
 
 var submitTransactionCmd = &cobra.Command{
@@ -148,7 +145,18 @@ type txOptions struct {
 	//TODO: add all transaction options
 }
 
+func withOptions(command *cobra.Command) {
+	command.PersistentFlags().StringVarP(&txOptionsFlag, "set-options", "o", "",
+		`set one or more transaction options (i.e. inflation destination, home domain, master weight, etc). this command takes parameters in JSON.
+                             example: --set-options '{"home_domain": "stellar.org", "max_weight": 1, "inflation_destination": "address"}'`)
+}
+
 func parseOptions(options string) b.SetOptionsBuilder {
+
+	if options == "" {
+		return b.SetOptionsBuilder{}
+	}
+
 	topts := &txOptions{}
 	if err := json.Unmarshal([]byte(options), topts); err != nil {
 		log.Fatal(err)

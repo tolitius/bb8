@@ -12,21 +12,16 @@ var changeTrustCmd = &cobra.Command{
 	Use:   "change-trust [args]",
 	Short: "create, update, or delete a trustline",
 	Long: `create, update, or delete a trustline. this command takes parameters in JSON and has an optional "limit" param, setting it to "0" removes the trustline.
+
 example: change-trust '{"source_account": "seed", "code": "XYZ", "issuer_address": "address", "limit": "42.0"}'`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
-		//TODO: add transactionOptionsFlag
-		var txOptionsBuilder b.SetOptionsBuilder
-		// if txOptionsFlag != "" {
-		// 	txOptionsBuilder = parseOptions(txOptions)
-		// }
 
 		ct := &changeTrust{}
 		if err := json.Unmarshal([]byte(args[0]), ct); err != nil {
 			log.Fatal(err)
 		}
-		tx := ct.set(conf, txOptionsBuilder)
+		tx := ct.set(conf, parseOptions(txOptionsFlag))
 		submitTransaction(conf.client, tx, ct.SourceAccount)
 	},
 	DisableFlagsInUseLine: true,

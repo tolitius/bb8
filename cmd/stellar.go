@@ -40,6 +40,12 @@ func AddCommands() {
 	StellarCmd.AddCommand(newTransactionCmd)
 }
 
+func init() {
+	withOptions(newTransactionCmd)
+	withOptions(sendPaymentCmd)
+	withOptions(changeTrustCmd)
+}
+
 // Execute adds sub commands to StellarCmd and sets all the command line flags
 func Execute() {
 
