@@ -20,6 +20,8 @@ A command line interface to [Stellar](https://www.stellar.org/) network.
   - [Do You Trust Me?](#do-you-trust-me)
   - [Limitting Trustline](#limitting-trustline)
 - [Sending Payments](#sending-payments)
+  - [Sending Non Native Assets](#sending-non-native-assets)
+  - [Sending Native Assets](#sending-native-assets)
 - [Transaction Options](#transaction-options)
   - [Adding Discoverablity and Meta Information](#adding-discoverablity-and-meta-information)
   - [Setting Inflation Destination](#setting-inflation-destination)
