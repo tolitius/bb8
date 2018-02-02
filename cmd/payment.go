@@ -13,7 +13,8 @@ var sendPaymentCmd = &cobra.Command{
 	Short: "send payment from one account to another",
 	Long: `send payment of any asset from one account to another. this command takes parameters in JSON.
 
-example: send-payment '{"from": "seed", "to": "address", "token": "XLM", "amount": "42.0"}'
+example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
+         send-payment '{"from": "seed", "to": "address", "amount": "42.0", "memo": "forty two"}'
          send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
 
          notice there is no issuer when sending XLM since it's a native asset.`,
@@ -30,7 +31,7 @@ example: send-payment '{"from": "seed", "to": "address", "token": "XLM", "amount
 }
 
 type tokenPayment struct {
-	From, To, Amount, Token, Issuer string
+	From, To, Amount, Token, Issuer, Memo string
 }
 
 func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
@@ -42,6 +43,7 @@ func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
 
 	var payment b.PaymentBuilder
+	var memo = b.MemoText{Value: t.Memo}
 
 	if t.Token == "XLM" && t.Issuer == "" {
 		payment = b.Payment(
@@ -60,6 +62,7 @@ func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 		conf.network,
 		b.AutoSequence{conf.client},
 		payment,
+		memo,
 		txOptions,
 	)
 

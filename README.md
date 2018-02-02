@@ -23,6 +23,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 - [Sending Payments](#sending-payments)
   - [Sending Non Native Assets](#sending-non-native-assets)
   - [Sending Native Assets](#sending-native-assets)
+  - [Adding Memo](#adding-memo)
 - [Transaction Options](#transaction-options)
   - [Adding Discoverablity and Meta Information](#adding-discoverablity-and-meta-information)
   - [Setting Inflation Destination](#setting-inflation-destination)
@@ -517,6 +518,21 @@ $ bb load-account $(cat distributor.pub) | jq '.balances'
 ```
 
 notice it went from `9999.9999600` to `10041.9999600` and is now up by 42 lumens.
+
+### Adding Memo
+
+Transactions also take an optional [memo](https://www.stellar.org/developers/guides/concepts/transactions.html#memo) field that is used for custom metadata.
+For example if you are a bank that is receiving or sending payments on behalf of other people, you might include the actual person the payment is meant for here.
+
+In order to include memo into a payment transaction add a `"memo"` key to `send-payment` arguments:
+
+```sh
+$ bb send-payment '{"from": "'$(cat issuer)'",
+                    "to": "'$(cat distributor.pub)'",
+                    "amount": "42.0",
+                    "memo": "forty two"}'
+```
+
 
 ## Transaction Options
 
