@@ -7,6 +7,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 
 - [Why](#why)
 - [Installation](#installation)
+  - [Homebrew](#homebrew)
   - [Download, Unpack, Go](#download-unpack-go)
   - [Or just Go](#or-just-go)
 - [Choosing Stellar Network](#choosing-stellar-network)
@@ -76,49 +77,28 @@ total fees paid: 1100
 
 Stellar has great API, command line shells have Turing complete power, they make a lovely couple.
 
-Command line shells are interactive by design and have a very rich and familiar set of tools that could be applied to Stellar API directly, ranging from simple account details:
-
-```sh
-$ stellar-mc load-account GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
-             jq '.inflation_destination, .balances'
-
-"GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"
-{
-  "balance": "42.0000000",
-  "limit": "42.0000000",
-  "asset_type": "credit_alphanum4",
-  "asset_code": "YUM",
-  "asset_issuer": "GDK5BSGYV2XFMO6H7OFTZDLJ2LFXTGMZLC4267OJQ4EASOFDBCELGBOA"
-},
-{
-  "balance": "10041.9999400",
-  "asset_type": "native"
-}
-```
-
-to rollups and runtime stats:
-
-```sh
-$ stellar-mc stream --transactions $(cat distributor.pub) |
-             grep --line-buffered fee_paid |
-             awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
-
-total fees paid: 100
-total fees paid: 300
-total fees paid: 500
-total fees paid: 700
-total fees paid: 900
-total fees paid: 1000
-total fees paid: 1100
-```
-
-Stellar has great API, command line shells have Turing complete power, they make a lovely couple.
-
 ## Installation
+
+There are multiple ways to install BB-8. The easiest one is with [Homebrew](https://brew.sh/):
+
+### Homebrew
+
+```sh
+$ brew install bb8
+==> Downloading https://github.com/tolitius/bb8/releases/download..
+######################################################################## 100.0%
+🍺  /usr/local/Cellar/bb8[version]: 4 files, 7.7MB, built in 3 seconds
+```
+
+and BB-8 is ready to rock:
+
+```sh
+$ bb --help
+```
 
 ### Download, Unpack, Go
 
-Grab a BB-8 release from [here](https://github.com/tolitius/bb8/releases) that matches your operating system.
+If Homebrew is not an option grab a BB-8 release from [here](https://github.com/tolitius/bb8/releases) that matches your operating system.
 
 Unpack it:
 
