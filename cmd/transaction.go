@@ -140,3 +140,20 @@ func (t *txOperations) buildTransaction(
 
 	return tx
 }
+
+type txOptions struct {
+	HomeDomain    *b.HomeDomain    `json:"home_domain"`
+	MasterWeight  *b.MasterWeight  `json:"master_weight"`
+	InflationDest *b.InflationDest `json:"inflation_destination"`
+	//TODO: add all transaction options
+}
+
+func parseOptions(options string) b.SetOptionsBuilder {
+	topts := &txOptions{}
+	if err := json.Unmarshal([]byte(options), topts); err != nil {
+		log.Fatal(err)
+	}
+
+	values := structValues(*topts)
+	return b.SetOptions(values...)
+}
