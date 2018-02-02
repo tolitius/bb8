@@ -1,12 +1,43 @@
 package cmd
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/spf13/cobra"
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 )
+
+var newTransactionCmd = &cobra.Command{
+	Use:   "new-tx [args]",
+	Short: "build and submit a new transaction",
+	Long: `build and submit a new transaction. this command takes parameters in JSON.
+"operations" and "signers" are optional, if there are no "signers", the "source_account" seed will be used to sign this transaction.
+example: --new-tx '{"source_account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer_address": "address"}}, "signers": ["seed1", "seed2"]}'`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+
+		//TODO: add transactionOptionsFlag
+		var txOptionsBuilder b.SetOptionsBuilder
+		// if txOptionsFlag != "" {
+		// 	txOptionsBuilder = parseOptions(txOptions)
+		// }
+
+		nt := &newTransaction{}
+		if err := json.Unmarshal([]byte(args[0]), nt); err != nil {
+			log.Fatal(err)
+		}
+		nt.Operations.SourceAccount = &b.SourceAccount{nt.SourceAccount}
+		tx := nt.Operations.buildTransaction(conf, txOptionsBuilder)
+		signers := nt.Signers
+		if signers == nil {
+			signers = []string{nt.SourceAccount}
+		}
+		submitTransaction(conf.client, tx, signers...)
+	},
+	DisableFlagsInUseLine: true,
+}
 
 var submitTransactionCmd = &cobra.Command{
 	Use:   "submit-tx [base64-encoded-transaction]",
@@ -61,4 +92,51 @@ func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed 
 	}
 
 	return submitTransactionB64(stellar, txeB64)
+}
+
+type txOperations struct {
+	SourceAccount *b.SourceAccount
+	//TODO: add all transaction operations
+}
+
+type newTransaction struct {
+	Operations    txOperations
+	SourceAccount string `json:"source_account"`
+	Signers       []string
+}
+
+func (t *txOperations) toMutators() []b.TransactionMutator {
+
+	values := structValues(*t)
+	muts := make([]b.TransactionMutator, len(values))
+
+	for i := 0; i < len(values); i++ {
+		switch values[i].(type) {
+		case b.TransactionMutator:
+			muts[i] = values[i].(b.TransactionMutator)
+		default:
+			log.Fatalf("%+v is not a valid transaction operation", values[i])
+		}
+	}
+
+	return muts
+}
+
+func (t *txOperations) buildTransaction(
+	conf *config,
+	options b.SetOptionsBuilder) *b.TransactionBuilder {
+
+	tx, err := b.Transaction(
+		t.SourceAccount,
+		conf.network,
+		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
+		options)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tx.Mutate(t.toMutators()...)
+
+	return tx
 }

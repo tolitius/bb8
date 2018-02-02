@@ -11,22 +11,6 @@ import (
 	"github.com/stellar/go/clients/horizon"
 )
 
-func structValues(s interface{}) []interface{} {
-
-	v := reflect.ValueOf(s)
-
-	values := make([]interface{}, 0)
-
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		if !f.IsNil() {
-			values = append(values, f.Interface())
-		}
-	}
-
-	return values
-}
-
 type ledgerStreamer struct {
 	Seconds int64
 	Cursor  horizon.Cursor
@@ -52,95 +36,20 @@ func (streamer *ledgerStreamer) streamLedger(stellar *horizon.Client) {
 	}
 }
 
-func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
+func structValues(s interface{}) []interface{} {
 
-	resp, err := stellar.SubmitTransaction(base64tx)
+	v := reflect.ValueOf(s)
 
-	if err != nil {
-		log.Println(err)
-		herr, isHorizonError := err.(*horizon.Error)
-		if isHorizonError {
-			resultCodes, err := herr.ResultCodes()
-			if err != nil {
-				log.Fatalln("failed to extract result codes from horizon response")
-			}
-			log.Fatalln(resultCodes)
-		}
-		log.Fatalln("could not submit the transaction")
-	}
+	values := make([]interface{}, 0)
 
-	return resp.Ledger
-}
-
-func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed ...string) int32 {
-
-	var txe b.TransactionEnvelopeBuilder
-	var err error
-
-	if len(seed) > 0 {
-		txe, err = txn.Sign(seed...)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		//TODO: refactor signing out to a pluggable func to be able to delegate it to external signers such as hardware wallets
-		log.Fatal("can't find a seed to sign this transaction, and external / hardware signers are not yet supported")
-	}
-
-	txeB64, err := txe.Base64()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return submitTransactionB64(stellar, txeB64)
-}
-
-type newTransaction struct {
-	Operations    txOperations
-	SourceAccount string `json:"source-account"`
-	Signers       []string
-}
-
-type txOperations struct {
-	SourceAccount *b.SourceAccount
-	//TODO: add all transaction operations
-}
-
-func (t *txOperations) toMutators() []b.TransactionMutator {
-
-	values := structValues(*t)
-	muts := make([]b.TransactionMutator, len(values))
-
-	for i := 0; i < len(values); i++ {
-		switch values[i].(type) {
-		case b.TransactionMutator:
-			muts[i] = values[i].(b.TransactionMutator)
-		default:
-			log.Fatalf("%+v is not a valid transaction operation", values[i])
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.IsNil() {
+			values = append(values, f.Interface())
 		}
 	}
 
-	return muts
-}
-
-func (t *txOperations) buildTransaction(
-	conf *config,
-	options b.SetOptionsBuilder) *b.TransactionBuilder {
-
-	tx, err := b.Transaction(
-		t.SourceAccount,
-		conf.network,
-		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
-		options)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tx.Mutate(t.toMutators()...)
-
-	return tx
+	return values
 }
 
 type txOptions struct {

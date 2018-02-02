@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"os"
+	"reflect"
 
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/keypair"
@@ -36,6 +37,7 @@ func AddCommands() {
 	StellarCmd.AddCommand(submitTransactionCmd)
 	StellarCmd.AddCommand(changeTrustCmd)
 	StellarCmd.AddCommand(sendPaymentCmd)
+	StellarCmd.AddCommand(newTransactionCmd)
 }
 
 // Execute adds sub commands to StellarCmd and sets all the command line flags
@@ -96,4 +98,20 @@ func readConfig(cpath string) *config {
 	}
 
 	return nil
+}
+
+func structValues(s interface{}) []interface{} {
+
+	v := reflect.ValueOf(s)
+
+	values := make([]interface{}, 0)
+
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if !f.IsNil() {
+			values = append(values, f.Interface())
+		}
+	}
+
+	return values
 }
