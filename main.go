@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	// "github.com/tolitius/stellar-mc/cmd"
 	"stellar-mc/cmd"
 
 	b "github.com/stellar/go/build"
@@ -59,12 +60,10 @@ func main() {
 
 	cmd.Execute()
 
-	var sendPayment string
 	var txOptions string
 	var buildTransaction string
 	var stream string
 
-	flag.StringVar(&sendPayment, "send-payment", "", "send payment from one account to another.\n    \texample: --send-payment '{\"from\": \"seed\", \"to\": \"address\", \"token\": \"BTC\", \"amount\": \"42.0\", \"issuer\": \"address\"}'")
 	flag.StringVar(&txOptions, "tx-options", "", "add one or more transaction options.\n    \texample: --tx-options '{\"home-domain\": \"stellar.org\", \"max-weight\": 1, \"inflation-destination\": \"address\"}'")
 	flag.StringVar(&buildTransaction, "new-tx", "", "build and submit a new transaction. \"operations\" and \"signers\" are optional, if there are no \"signers\", the \"source-account\" seed will be used to sign this transaction.\n    \texample: --new-tx '{\"source-account\": \"address or seed\", {\"operations\": \"trust\": {\"code\": \"XYZ\", \"issuer-address\": \"address\"}}, \"signers\": [\"seed1\", \"seed2\"]}'")
 	flag.StringVar(&stream, "stream", "", "stream Stellar \"ledger\", \"payments\" and \"tranasaction\" events with optional \"-s\" (seconds) and \"-c\" (cursor) subflags.\n    \texample: --stream ledger\n     \t\t--stream payments -s 42 -c now")
@@ -79,13 +78,6 @@ func main() {
 	}
 
 	switch {
-	case sendPayment != "":
-		payment := &tokenPayment{}
-		if err := json.Unmarshal([]byte(sendPayment), payment); err != nil {
-			log.Fatal(err)
-		}
-		tx := payment.send(conf, txOptionsBuilder)
-		submitTransaction(conf.client, tx, payment.From)
 	case buildTransaction != "":
 		nt := &newTransaction{}
 		if err := json.Unmarshal([]byte(buildTransaction), nt); err != nil {

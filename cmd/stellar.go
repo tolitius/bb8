@@ -35,6 +35,7 @@ func AddCommands() {
 	StellarCmd.AddCommand(loadAccountCmd)
 	StellarCmd.AddCommand(submitTransactionCmd)
 	StellarCmd.AddCommand(changeTrustCmd)
+	StellarCmd.AddCommand(sendPaymentCmd)
 }
 
 // Execute adds sub commands to StellarCmd and sets all the command line flags

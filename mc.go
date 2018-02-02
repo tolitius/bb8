@@ -9,7 +9,6 @@ import (
 
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/keypair"
 )
 
 func structValues(s interface{}) []interface{} {
@@ -26,16 +25,6 @@ func structValues(s interface{}) []interface{} {
 	}
 
 	return values
-}
-
-func seedToPair(seed string) keypair.KP {
-
-	kp, err := keypair.Parse(seed)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return kp
 }
 
 type ledgerStreamer struct {
@@ -105,34 +94,6 @@ func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed 
 	}
 
 	return submitTransactionB64(stellar, txeB64)
-}
-
-type tokenPayment struct {
-	From, To, Amount, Token, Issuer string
-}
-
-func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
-
-	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
-
-	asset := b.CreditAsset(t.Token, t.Issuer)
-
-	tx, err := b.Transaction(
-		b.SourceAccount{t.From},
-		conf.network,
-		b.AutoSequence{conf.client},
-		b.Payment(
-			b.Destination{t.To},
-			b.CreditAmount{asset.Code, asset.Issuer, t.Amount},
-		),
-		txOptions,
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tx
 }
 
 type newTransaction struct {
