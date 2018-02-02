@@ -25,6 +25,7 @@ A command line interface to [Stellar](https://www.stellar.org/) network.
 - [Transaction Options](#transaction-options)
   - [Adding Discoverablity and Meta Information](#adding-discoverablity-and-meta-information)
   - [Setting Inflation Destination](#setting-inflation-destination)
+- [Streaming Stellar Events](#streaming-stellar-events)
 - [License](#license)
 
 ## Why
@@ -36,6 +37,44 @@ There are already mutiple ways to interact with Stellar:
 * [Stellar Labratory](https://www.stellar.org/laboratory/)
 
 Stellar Mission Control Center adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
+
+Command line shells are interactive by design and have a very rich and familiar set of tools that could be applied to Stellar API directly, ranging from simple account details:
+
+```sh
+$ stellar-mc load-account GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
+             jq '.inflation_destination, .balances'
+
+"GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"
+{
+  "balance": "42.0000000",
+  "limit": "42.0000000",
+  "asset_type": "credit_alphanum4",
+  "asset_code": "YUM",
+  "asset_issuer": "GDK5BSGYV2XFMO6H7OFTZDLJ2LFXTGMZLC4267OJQ4EASOFDBCELGBOA"
+},
+{
+  "balance": "10041.9999400",
+  "asset_type": "native"
+}
+```
+
+to rollups and runtime stats:
+
+```sh
+$ stellar-mc stream --transactions $(cat distributor.pub) |
+             grep --line-buffered fee_paid |
+             awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
+
+total fees paid: 100
+total fees paid: 300
+total fees paid: 500
+total fees paid: 700
+total fees paid: 900
+total fees paid: 1000
+total fees paid: 1100
+```
+
+Stellar has great API, command line shells have Turing complete power, they make a lovely couple.
 
 ## Installation
 
@@ -281,7 +320,7 @@ $ stellar-mc load-account $(cat issuer.pub) | jq '.balances'
 ```
 
 ```sh
-$ stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
+$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -521,6 +560,90 @@ $ stellar-mc load-account $(cat distributor.pub) | jq '.home_domain, .inflation_
 Here is a prettier version of the options that were set in this transaction on [testnet.stellarchain.io](http://testnet.stellarchain.io/address/GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5):
 
 <img src="doc/img/tx-options.png">
+
+## Streaming Stellar Events
+
+`stellar-mc` has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:
+
+```sh
+$ stellar-mc stream --help
+stream "ledger", "payment" and "tranasaction" events.
+events are streamed in JSON and will do so forever or for a period of time specified by a --seconds flag.
+
+example: stream --ledger
+         stream -t GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP --seconds 42 --cursor now
+         stream -p GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP -s 42
+
+Usage:
+  stellar-mc stream [flags]
+
+Flags:
+  -c, --cursor string         a paging token, specifying where to start returning records from. When streaming this can be set to "now" to stream object created since your request time. examples: -c 8589934592, -c now
+  -h, --help                  help for stream
+  -l, --ledger                stream ledger events
+  -p, --payments string       stream account payment events. example: --payments account-address
+  -s, --seconds int           number of seconds to stream events for
+  -t, --transactions string   stream account transaction events. example: --transactions account-address
+```
+
+Events are streamed in JSON and can be filtered by `jq`, `grep`, and alike. As any streaming data these events could also be rolled up on the fly. Command line is perfect for this since it is extremely interactive and command rich.
+
+For example let's look at all the fees a certain account paid:
+
+```sh
+$ stellar-mc stream --transactions $(cat bar.pub) | grep fee_paid
+```
+
+the fees are going to show up on the terminal as new transaction events are coming to a Stellar network:
+
+```json
+  "fee_paid": 100,
+  "fee_paid": 200,
+  "fee_paid": 200,
+  "fee_paid": 100,
+  "fee_paid": 200,
+  "fee_paid": 200,
+  "fee_paid": 100,
+  "fee_paid": 100,
+  "fee_paid": 100,
+  "fee_paid": 100,
+  "fee_paid": 100,
+  "fee_paid": 200,
+  "fee_paid": 200,
+  "fee_paid": 200,
+  "fee_paid": 200,
+  "fee_paid": 200,
+```
+
+Now let's roll them up to current totals:
+
+```sh
+$ stellar-mc stream --transactions $(cat bar.pub) |
+             grep --line-buffered fee_paid |
+             awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
+```
+```json
+total fees paid: 100
+total fees paid: 300
+total fees paid: 500
+total fees paid: 600
+total fees paid: 800
+total fees paid: 1000
+total fees paid: 1100
+total fees paid: 1200
+total fees paid: 1300
+total fees paid: 1400
+total fees paid: 1500
+total fees paid: 1700
+total fees paid: 1900
+total fees paid: 2100
+total fees paid: 2300
+total fees paid: 2500
+```
+
+beautiful!
+
+This and much more is brought to you by the power of command line.
 
 ## License
 
