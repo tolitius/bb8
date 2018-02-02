@@ -2,7 +2,7 @@
 # Build customization
 builds:
   - main: main.go
-    binary: stellar-mc
+    binary: bb
     goos:
       - windows
       - darwin

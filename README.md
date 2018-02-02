@@ -1,7 +1,7 @@
-# Stellar Mission Control Center
+# Beebee Ate
 
 [![Build
-Status](https://travis-ci.org/tolitius/stellar-mc.svg?branch=master)](https://travis-ci.org/tolitius/stellar-mc)
+Status](https://travis-ci.org/tolitius/bb8.svg?branch=master)](https://travis-ci.org/tolitius/bb8)
 
 A command line interface to [Stellar](https://www.stellar.org/) networks.
 
@@ -36,7 +36,45 @@ There are already mutiple ways to interact with Stellar:
 * [SDK libraries](https://www.stellar.org/developers/reference/#libraries) in several languages
 * [Stellar Labratory](https://www.stellar.org/laboratory/)
 
-Stellar Mission Control Center adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
+BB-8 adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
+
+Command line shells are interactive by design and have a very rich and familiar set of tools that could be applied to Stellar API directly, ranging from simple account details:
+
+```sh
+$ bb load-account GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
+                  jq '.inflation_destination, .balances'
+
+"GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"
+{
+  "balance": "42.0000000",
+  "limit": "42.0000000",
+  "asset_type": "credit_alphanum4",
+  "asset_code": "YUM",
+  "asset_issuer": "GDK5BSGYV2XFMO6H7OFTZDLJ2LFXTGMZLC4267OJQ4EASOFDBCELGBOA"
+},
+{
+  "balance": "10041.9999400",
+  "asset_type": "native"
+}
+```
+
+to rollups and runtime stats:
+
+```sh
+$ bb stream --transactions GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
+            grep --line-buffered fee_paid |
+            awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
+
+total fees paid: 100
+total fees paid: 300
+total fees paid: 500
+total fees paid: 700
+total fees paid: 900
+total fees paid: 1000
+total fees paid: 1100
+```
+
+Stellar has great API, command line shells have Turing complete power, they make a lovely couple.
 
 Command line shells are interactive by design and have a very rich and familiar set of tools that could be applied to Stellar API directly, ranging from simple account details:
 
@@ -80,18 +118,18 @@ Stellar has great API, command line shells have Turing complete power, they make
 
 ### Download, Unpack, Go
 
-Grab a `stellar-mc` release from [here](https://github.com/tolitius/stellar-mc/releases) that matches your operating system.
+Grab a BB-8 release from [here](https://github.com/tolitius/bb8/releases) that matches your operating system.
 
 Unpack it:
 
 ```sh
-tar -xvzf stellar-mc_[version]_[OS].tar.gz
+tar -xvzf bb8_[version]_[OS].tar.gz
 ```
 
 and go:
 
 ```sh
-$ ./stellar-mc --help  ##  or "stellar-mc.exe --help" on Windows
+$ ./bb --help  ##  or "bb.exe --help" on Windows
 ```
 
 ### Or just Go
@@ -99,20 +137,20 @@ $ ./stellar-mc --help  ##  or "stellar-mc.exe --help" on Windows
 If you have Golang installed, you could simply:
 
 ```sh
-$ go get github.com/tolitius/stellar-mc
+$ go get github.com/tolitius/bb8
 ```
 
-a runnable `stellar-mc` will be under `$GOBIN`:
+a runnable `bb` will be under `$GOBIN`:
 
 ```sh
-$ $GOBIN/stellar-mc --help
+$ $GOBIN/bb --help
 ```
 
 Or clone the repo and `go build` it if you prefer a bare minimum.
 
 ## Choosing Stellar Network
 
-By default `stellar-mc` uses the Stellar [test network](https://www.stellar.org/developers/guides/concepts/test-net.html) a.k.a. testnet.
+By default BB-8 uses the Stellar [test network](https://www.stellar.org/developers/guides/concepts/test-net.html) a.k.a. testnet.
 
 In case the work needs to be done on the Stellar public network a `STELLAR_NETWORK` environment variable should be set to "`public`":
 
@@ -127,13 +165,13 @@ If `STELLAR_NETWORK` is unset or is set to "`test`" a testnet will be used.
 ## Buttons to Push
 
 ``` sh
-$ stellar-mc --help
+$ bb --help
 ```
 ```
-stellar is a command line interface to Stellar (https://www.stellar.org/) networks.
+bb is a command line interface to Stellar (https://www.stellar.org/) networks.
 
 Usage:
-  stellar-mc [command]
+  bb [command]
 
 Available Commands:
   change-trust create, update, or delete a trustline
@@ -145,12 +183,12 @@ Available Commands:
   send-payment send payment from one account to another
   stream       stream "ledger", "payment" and "tranasaction" events.
   submit-tx    submit a base64 encoded transaction
-  version      print the version number of stellar mc
+  version      print the version number of bb
 
 Flags:
-  -h, --help   help for stellar-mc
+  -h, --help   help for bb
 
-Use "stellar-mc [command] --help" for more information about a command.
+Use "bb [command] --help" for more information about a command.
 ```
 
 ## Create Account Keys
@@ -160,10 +198,10 @@ Every Stellar account has a pair of keys:
 * a public key that is also known as account's `address`
 * a private key that is also known as `seed`
 
-`stellar-mc` has a `gen-keys` command to generate this pair of keys:
+BB-8 has a `gen-keys` command to generate this pair of keys:
 
 ``` sh
-$ stellar-mc gen-keys foo
+$ bb gen-keys foo
 2018/01/30 15:15:46 keys are created and stored in: foo.pub and foo
 ```
 
@@ -182,20 +220,20 @@ It is later used to _sign_ Stellar transactions to confirm that it is "_really y
 
 Stellar has a friendly utility called [Friendbot](https://www.stellar.org/developers/horizon/reference/tutorials/follow-received-payments.html#funding-your-account) that funds a new account on the Stellar test network. When a new account is created (e.g. a pair of keys we created above), this account has no balance and does not exist in the ledger until it is funded. Friendbot fixes that problem.
 
-`stellar-mc` has `fund` command that takes an account's address and funds it a good amount of lumens:
+BB-8 has `fund` command that takes an account's address and funds it a good amount of lumens:
 
 ``` sh
-$ stellar-mc fund $(cat foo.pub)
+$ bb fund $(cat foo.pub)
 ```
 
 here we used a `foo.pub` address that we generated above. Next, we'll look at this account on the real, distributed Stellar ledger.
 
 ## Account Details
 
-In order to look at the account in the ledger `stellar-mc` provides an `load-account` command that takes an account address and returns all the details known to Stellar:
+In order to look at the account in the ledger BB-8 provides an `load-account` command that takes an account address and returns all the details known to Stellar:
 
 ```sh
-$ stellar-mc load-account $(cat foo.pub)
+$ bb load-account $(cat foo.pub)
 ```
 ```json
 {
@@ -259,7 +297,7 @@ $ stellar-mc load-account $(cat foo.pub)
 notice the `balances` section:
 
 ```sh
-$ stellar-mc load-account $(cat foo.pub) | jq '.balances'
+$ bb load-account $(cat foo.pub) | jq '.balances'
 ```
 
 ```json
@@ -293,24 +331,24 @@ The official name for the distribution account is [specialized issuing account](
 In this example we would assume no accounts exist so we'll generate issuer and distributor key pairs:
 
 ``` sh
-$ stellar-mc gen-keys issuer
+$ bb gen-keys issuer
 2018/01/30 15:42:48 keys are created and stored in: issuer.pub and issuer
 
-$ stellar-mc --gen-keys distributor
+$ bb --gen-keys distributor
 2018/01/30 15:42:52 keys are created and stored in: distributor.pub and distributor
 ```
 
 In order to process transactions these accounts need to have a few `XLM`s for minimum balances, creating a trustline and transaction fees. We'll use Stellar's Friendbot to fund these accounts:
 
 ``` sh
-$ stellar-mc fund $(cat issuer.pub)
-$ stellar-mc fund $(cat distributor.pub)
+$ bb fund $(cat issuer.pub)
+$ bb fund $(cat distributor.pub)
 ```
 
 Let's make sure it worked by checking their balances:
 
 ```sh
-$ stellar-mc load-account $(cat issuer.pub) | jq '.balances'
+$ bb load-account $(cat issuer.pub) | jq '.balances'
 ```
 ```json
 {
@@ -320,7 +358,7 @@ $ stellar-mc load-account $(cat issuer.pub) | jq '.balances'
 ```
 
 ```sh
-$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
+$ bb load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -336,9 +374,9 @@ Now we are ready to issue a new token, let's call it `YUM`.
 In order to do that we'd use a `change-trust` command to setup a trustline between the distribution account and the issuer:
 
 ``` sh
-$ stellar-mc change-trust '{"source_account": "'$(cat distributor)'",
-                            "code": "YUM",
-                            "issuer_address": "'$(cat issuer.pub)'"}'
+$ bb change-trust '{"source_account": "'$(cat distributor)'",
+                    "code": "YUM",
+                    "issuer_address": "'$(cat issuer.pub)'"}'
 ```
 
 `change-trust` does several things:
@@ -351,7 +389,7 @@ $ stellar-mc change-trust '{"source_account": "'$(cat distributor)'",
 Let's check that `YUM` is now an existing token that was issued by issuer's address and that the distributor has successfully _created a trustline_ for it:
 
 ```sh
-$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
+$ bb load-account $(cat distributor.pub) | jq '.balances'
 ```
 
 ```json
@@ -377,14 +415,14 @@ Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/dev
 The `change-trust` command takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
 ``` sh
-$ stellar-mc change-trust '{"source_account": "'$(cat distributor)'",
-                            "code": "YUM",
-                            "issuer_address": "'$(cat issuer.pub)'",
-                            "limit": "42.0"}'
+$ bb change-trust '{"source_account": "'$(cat distributor)'",
+                    "code": "YUM",
+                    "issuer_address": "'$(cat issuer.pub)'",
+                    "limit": "42.0"}'
 ```
 
 ```sh
-$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
+$ bb load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -422,14 +460,14 @@ In order to send a payment of a non native assset, which is any token on a Stell
 
 To continue the [issuing a new token](#issuing-a-new-token) example, we'll send `42.0` YUMs from the issuer to distributor.
 
-`stellar-mc` has a `send-payment` command that is capable of sending XLM as well as any other token, in this case YUM:
+BB-8 has a `send-payment` command that is capable of sending XLM as well as any other token, in this case YUM:
 
 ```sh
-$ stellar-mc send-payment '{"from": "'$(cat issuer)'",
-                            "to": "'$(cat distributor.pub)'",
-                            "token": "YUM",
-                            "amount": "42.0",
-                            "issuer": "'$(cat issuer.pub)'"}'
+$ bb send-payment '{"from": "'$(cat issuer)'",
+                    "to": "'$(cat distributor.pub)'",
+                    "token": "YUM",
+                    "amount": "42.0",
+                    "issuer": "'$(cat issuer.pub)'"}'
 
 2018/01/30 16:11:56 sending 42.0 YUM from GBW2U2GEWVD7GDTQPPJSDGE4SRYXN3USYZKNNI6EPVHUHROS47S6NUZJ to GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5
 ```
@@ -437,7 +475,7 @@ $ stellar-mc send-payment '{"from": "'$(cat issuer)'",
 Let's check the balance now:
 
 ```sh
-$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
+$ bb load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -472,9 +510,9 @@ In order to send XLM (a.k.a. lumens) from one account to another `send-payment` 
 Since we funded the issuer account with XLMs in the example above, we'll use it as a source account, but of course any account that has lumens can be used instead:
 
 ```sh
-$ stellar-mc send-payment '{"from": "'$(cat issuer)'",
-                            "to": "'$(cat distributor.pub)'",
-                            "amount": "42.0"}'
+$ bb send-payment '{"from": "'$(cat issuer)'",
+                    "to": "'$(cat distributor.pub)'",
+                    "amount": "42.0"}'
 
 2018/01/30 16:12:19 sending 42.0 XLM from GDK5BSGYV2XFMO6H7OFTZDLJ2LFXTGMZLC4267OJQ4EASOFDBCELGBOA to GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F
 ```
@@ -482,7 +520,7 @@ $ stellar-mc send-payment '{"from": "'$(cat issuer)'",
 We just sent 42 lumens from the issuer to the distribution account. Let's check the distribution account's balance:
 
 ```sh
-$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
+$ bb load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -504,7 +542,7 @@ notice it went from `9999.9999600` to `10041.9999600` and is now up by 42 lumens
 
 When submitting a transaction to Stellar there are several [transaction options](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#set-options) that could be set.
 
-`stellar-mc` has a `--set-options` flag that takes these options as JSON and sets them on a transaction before it is submitted.
+BB-8 has a `--set-options` flag that takes these options as JSON and sets them on a transaction before it is submitted.
 
 All the transaction commands such as `send-payment`, `change-trust`, `new-tx` and others have this optional flag.
 
@@ -517,8 +555,8 @@ In order to discover information about a particular token Stellar would look at 
 Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--set-options`:
 
 ```sh
-$ stellar-mc new-tx '{"source_account": "'$(cat issuer)'"}' \
-             --set-options '{"home_domain": "dotkam.com"}'
+$ bb new-tx '{"source_account": "'$(cat issuer)'"}' \
+            --set-options '{"home_domain": "dotkam.com"}'
 ```
 
 > _will discuss `new-tx` later as it is still work in progress to include other transaction operations_
@@ -526,7 +564,7 @@ $ stellar-mc new-tx '{"source_account": "'$(cat issuer)'"}' \
 and now the issuer account is linked to its home domain where Stellar can find more details about it:
 
 ```sh
-$ stellar-mc load-account $(cat issuer.pub) | jq '.home_domain'
+$ bb load-account $(cat issuer.pub) | jq '.home_domain'
 "dotkam.com"
 ```
 ### Setting Inflation Destination
@@ -538,21 +576,21 @@ Another example of using Stellar transaction options would be setting an inflati
 Inflation destination can be set via `--set-options`. For example let's set an inflation destination on the distribution account from the examples above:
 
 ```sh
-$ stellar-mc new-tx '{"source_account": "'$(cat distributor)'"}' \
-             --set-options '{"inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ bb new-tx '{"source_account": "'$(cat distributor)'"}' \
+            --set-options '{"inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 ```
 
 We can combine other options, let's add a home domain as well:
 ```sh
-$ stellar-mc new-tx '{"source_account": "'$(cat distributor)'"}' \
-             --set-options '{"home_domain": "dotkam.com",
-                             "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ bb new-tx '{"source_account": "'$(cat distributor)'"}' \
+            --set-options '{"home_domain": "dotkam.com",
+                            "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 ```
 
 and we can check that both options were set successfully:
 
 ```sh
-$ stellar-mc load-account $(cat distributor.pub) | jq '.home_domain, .inflation_destination'
+$ bb load-account $(cat distributor.pub) | jq '.home_domain, .inflation_destination'
 "dotkam.com"
 "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"
 ```
@@ -563,10 +601,10 @@ Here is a prettier version of the options that were set in this transaction on [
 
 ## Streaming Stellar Events
 
-`stellar-mc` has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:
+BB-8 has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:
 
 ```sh
-$ stellar-mc stream --help
+$ bb stream --help
 stream "ledger", "payment" and "tranasaction" events.
 events are streamed in JSON and will do so forever or for a period of time specified by a --seconds flag.
 
@@ -575,7 +613,7 @@ example: stream --ledger
          stream -p GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP -s 42
 
 Usage:
-  stellar-mc stream [flags]
+  bb stream [flags]
 
 Flags:
   -c, --cursor string         a paging token, specifying where to start returning records from. When streaming this can be set to "now" to stream object created since your request time. examples: -c 8589934592, -c now
@@ -591,7 +629,7 @@ Events are streamed in JSON and can be filtered by `jq`, `grep`, and alike. As a
 For example let's look at all the fees a certain account paid:
 
 ```sh
-$ stellar-mc stream --transactions $(cat bar.pub) | grep fee_paid
+$ bb stream --transactions $(cat bar.pub) | grep fee_paid
 ```
 
 the fees are going to show up on the terminal as new transaction events are coming to a Stellar network:
@@ -618,9 +656,9 @@ the fees are going to show up on the terminal as new transaction events are comi
 Now let's roll them up to current totals:
 
 ```sh
-$ stellar-mc stream --transactions $(cat bar.pub) |
-             grep --line-buffered fee_paid |
-             awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
+$ bb stream --transactions $(cat bar.pub) |
+            grep --line-buffered fee_paid |
+            awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
 ```
 ```json
 total fees paid: 100

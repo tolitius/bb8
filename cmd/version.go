@@ -7,19 +7,19 @@ import (
 )
 
 const (
-	smccVersion = "0.1.2"
+	bb8Version = "0.1.3"
 )
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "print the version number of stellar mc",
+	Short: "print the version number of bb",
 	Run: func(cmd *cobra.Command, args []string) {
-		printStellarMcVersion()
+		printBB8Version()
 	},
 	DisableFlagsInUseLine: true,
 }
 
-func printStellarMcVersion() {
+func printBB8Version() {
 	//TODO: get the latest git tag and meta
-	fmt.Printf("Stellar Mission Control Center, version %s\n", smccVersion)
+	fmt.Printf("BB-8, version %s\n", bb8Version)
 }
