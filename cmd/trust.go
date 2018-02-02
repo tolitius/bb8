@@ -11,7 +11,8 @@ import (
 var changeTrustCmd = &cobra.Command{
 	Use:   "change-trust [args]",
 	Short: "create, update, or delete a trustline",
-	Long: `create, update, or delete a trustline. this command takes parameters in JSON and has an optional "limit" param, setting it to "0" removes the trustline.
+	Long: `create, update, or delete a trustline.
+this command takes parameters in JSON and has an optional "limit" param, setting it to "0" removes the trustline.
 
 example: change-trust '{"source_account": "seed", "code": "XYZ", "issuer_address": "address", "limit": "42.0"}'`,
 	Args: cobra.ExactArgs(1),

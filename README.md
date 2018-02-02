@@ -86,24 +86,30 @@ If `STELLAR_NETWORK` is unset or is set to "`test`" a testnet will be used.
 ## Buttons to Push
 
 ``` sh
-$ ./stellar-mc --help
-Usage of ./stellar-mc:
-  -account-details string
-    	load and return account details. example: --account-details address
-  -change-trust string
-    	create, update, or delete a trustline. has a "limit" param which is optional, setting it to "0" removes the trustline example: --change-trust '{"source-account": "seed", "code": "XYZ", "issuer-address": "address", "limit": "42.0"}'
-  -fund string
-    	fund a test account. example: --fund address
-  -gen-keys string
-    	create a pair of keys (in two files "file-path" and "file-path.pub"). example: --gen-keys file-path
-  -new-tx string
-    	build and submit a new transaction. "operations" and "signers" are optional, if there are no "signers", the "source-account" seed will be used to sign this transaction. example: --new-tx '{"source-account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer-address": "address"}}, "signers": ["seed1", "seed2"]}'
-  -send-payment string
-    	send payment from one account to another. example: --send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
-  -submit-tx string
-    	submit a base64 encoded transaction. example: --submit-tx txn
-  -tx-options string
-    	add one or more transaction options. example: --tx-options '{"home-domain": "stellar.org", "max-weight": 1, "inflation-destination": "address"}'
+$ stellar-mc --help
+```
+```
+stellar is a command line interface to Stellar (https://www.stellar.org/) networks.
+
+Usage:
+  stellar-mc [command]
+
+Available Commands:
+  change-trust create, update, or delete a trustline
+  fund         fund a test account
+  gen-keys     create a pair of keys (in two files "file-name.pub" and "file-name").
+  help         Help about any command
+  load-account load and return account details
+  new-tx       build and submit a new transaction
+  send-payment send payment from one account to another
+  stream       stream "ledger", "payment" and "tranasaction" events.
+  submit-tx    submit a base64 encoded transaction
+  version      print the version number of stellar mc
+
+Flags:
+  -h, --help   help for stellar-mc
+
+Use "stellar-mc [command] --help" for more information about a command.
 ```
 
 ## Create Account Keys
@@ -113,10 +119,10 @@ Every Stellar account has a pair of keys:
 * a public key that is also known as account's `address`
 * a private key that is also known as `seed`
 
-`stellar-mc` has a `--gen-keys` flag to generate this pair of keys:
+`stellar-mc` has a `gen-keys` command to generate this pair of keys:
 
 ``` sh
-$ ./stellar-mc --gen-keys foo
+$ stellar-mc gen-keys foo
 2018/01/30 15:15:46 keys are created and stored in: foo.pub and foo
 ```
 
@@ -135,20 +141,20 @@ It is later used to _sign_ Stellar transactions to confirm that it is "_really y
 
 Stellar has a friendly utility called [Friendbot](https://www.stellar.org/developers/horizon/reference/tutorials/follow-received-payments.html#funding-your-account) that funds a new account on the Stellar test network. When a new account is created (e.g. a pair of keys we created above), this account has no balance and does not exist in the ledger until it is funded. Friendbot fixes that problem.
 
-`stellar-mc` has `--fund` flag that takes an account's address and funds it a good amount of lumens:
+`stellar-mc` has `fund` command that takes an account's address and funds it a good amount of lumens:
 
 ``` sh
-$ ./stellar-mc --fund $(cat foo.pub)
+$ stellar-mc fund $(cat foo.pub)
 ```
 
-here we used a `foo.pub` address that we generated above. Next, we'll look at the account on the real, distributed Stellar ledger.
+here we used a `foo.pub` address that we generated above. Next, we'll look at this account on the real, distributed Stellar ledger.
 
 ## Account Details
 
-In order to look at the account in the ledger `stellar-mc` provides an `--account-details` flag that takes an account address and returns all the details known to Stellar:
+In order to look at the account in the ledger `stellar-mc` provides an `load-account` command that takes an account address and returns all the details known to Stellar:
 
 ```sh
-$ ./stellar-mc --account-details $(cat foo.pub)
+$ stellar-mc load-account $(cat foo.pub)
 ```
 ```json
 {
@@ -212,7 +218,7 @@ $ ./stellar-mc --account-details $(cat foo.pub)
 notice the `balances` section:
 
 ```sh
-$ ./stellar-mc --account-details $(cat foo.pub) | jq '.balances'
+$ stellar-mc load-account $(cat foo.pub) | jq '.balances'
 ```
 
 ```json
@@ -246,24 +252,24 @@ The official name for the distribution account is [specialized issuing account](
 In this example we would assume no accounts exist so we'll generate issuer and distributor key pairs:
 
 ``` sh
-$ ./stellar-mc --gen-keys issuer
+$ stellar-mc gen-keys issuer
 2018/01/30 15:42:48 keys are created and stored in: issuer.pub and issuer
 
-$ ./stellar-mc --gen-keys distributor
+$ stellar-mc --gen-keys distributor
 2018/01/30 15:42:52 keys are created and stored in: distributor.pub and distributor
 ```
 
-In order to process transactions these accounts need to have a few `XLM`s for minimum balances, trustline and transaction fees. We'll use Stellar's Friendbot to fund these accounts:
+In order to process transactions these accounts need to have a few `XLM`s for minimum balances, creating a trustline and transaction fees. We'll use Stellar's Friendbot to fund these accounts:
 
 ``` sh
-$ ./stellar-mc --fund "$(cat issuer.pub)"
-$ ./stellar-mc --fund "$(cat distributor.pub)"
+$ stellar-mc fund $(cat issuer.pub)
+$ stellar-mc fund $(cat distributor.pub)
 ```
 
 Let's make sure it worked by checking their balances:
 
 ```sh
-$ ./stellar-mc --account-details $(cat issuer.pub) | jq '.balances'
+$ stellar-mc load-account $(cat issuer.pub) | jq '.balances'
 ```
 ```json
 {
@@ -273,7 +279,7 @@ $ ./stellar-mc --account-details $(cat issuer.pub) | jq '.balances'
 ```
 
 ```sh
-$ ./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
+$ stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -286,15 +292,15 @@ $ ./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
 
 Now we are ready to issue a new token, let's call it `YUM`.
 
-`stellar-mc` has an `--change-trust` flag that takes a source account's seed (to sign this transaction), the code of the token and the issuer's address as JSON:
+In order to do that we'd use a `change-trust` command to setup a trustline between the distribution account and the issuer:
 
 ``` sh
-$ ./stellar-mc --change-trust '{"source-account": "'$(cat distributor)'",
-                                "code": "YUM",
-                                "issuer-address": "'$(cat issuer.pub)'"}'
+$ stellar-mc change-trust '{"source_account": "'$(cat distributor)'",
+                            "code": "YUM",
+                            "issuer_address": "'$(cat issuer.pub)'"}'
 ```
 
-`stellar-mc --change-trust` does several things:
+`change-trust` does several things:
 
 * creates a new asset (in this case `YUM`)
 * creates a new transaction where it sets a trustline between the receiving account ("distributor") and this asset
@@ -304,7 +310,7 @@ $ ./stellar-mc --change-trust '{"source-account": "'$(cat distributor)'",
 Let's check that `YUM` is now an existing token that was issued by issuer's address and that the distributor has successfully _created a trustline_ for it:
 
 ```sh
-$ ./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
+$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
 ```
 
 ```json
@@ -327,17 +333,17 @@ Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/dev
 
 ### Limitting Trustline
 
-The `--change-trust` flag takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
+The `change-trust` command takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
 ``` sh
-$ ./stellar-mc --change-trust '{"source-account": "'$(cat distributor)'",
-                                "code": "YUM",
-                                "issuer-address": "'$(cat issuer.pub)'",
-                                "limit": "42.0"}'
+$ stellar-mc change-trust '{"source_account": "'$(cat distributor)'",
+                            "code": "YUM",
+                            "issuer_address": "'$(cat issuer.pub)'",
+                            "limit": "42.0"}'
 ```
 
 ```sh
-./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
+$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -363,6 +369,8 @@ notice a "Change Trust" operation and a zero balance (for now).
 
 ## Sending Payments
 
+### Sending Non Native Assets
+
 In order to send a payment of a non native assset, which is any token on a Stellar network besides `XLM`, we need to know several things:
 
 * sender's private key in order to sign this payment transaction
@@ -373,14 +381,14 @@ In order to send a payment of a non native assset, which is any token on a Stell
 
 To continue the [issuing a new token](#issuing-a-new-token) example, we'll send `42.0` YUMs from the issuer to distributor.
 
-`stellar-mc` has a `--send-payment` flag that takes a JSON map with these keys: `"from", "to", "token", "amount", "issuer"`:
+`stellar-mc` has a `send-payment` command that is capable of sending XLM as well as any other token, in this case YUM:
 
 ```sh
-$ ./stellar-mc --send-payment '{"from": "'$(cat issuer)'",
-                                "to": "'$(cat distributor.pub)'",
-                                "token": "YUM",
-                                "amount": "42.0",
-                                "issuer": "'$(cat issuer.pub)'"}'
+$ stellar-mc send-payment '{"from": "'$(cat issuer)'",
+                            "to": "'$(cat distributor.pub)'",
+                            "token": "YUM",
+                            "amount": "42.0",
+                            "issuer": "'$(cat issuer.pub)'"}'
 
 2018/01/30 16:11:56 sending 42.0 YUM from GBW2U2GEWVD7GDTQPPJSDGE4SRYXN3USYZKNNI6EPVHUHROS47S6NUZJ to GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5
 ```
@@ -388,7 +396,7 @@ $ ./stellar-mc --send-payment '{"from": "'$(cat issuer)'",
 Let's check the balance now:
 
 ```sh
-$ ./stellar-mc --account-details $(cat distributor.pub) | jq '.balances'
+$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
 ```
 ```json
 {
@@ -410,35 +418,74 @@ Here is the prettier version of `42.0` YUMs on [testnet.stellarchain.io](http://
 
 Source (i.e. `"from"`) of the payment could be any account, not just the issuer, as long as this account has YUMs to send. The reason it was the issuer in the example above is that it was the only account that had YUMs. The issuer's public key though should still be used to identify the asset: "this YUM token you are getting was indeed signed by me".
 
-Excellent, we are now ready to distribute YUMs. We can use the same `--send-payment` flag with different account addresses to do that.
+Excellent, we are now ready to distribute YUMs. We can use the same `send-payment` command with different account addresses to do that.
+
+### Sending Native Assets
+
+In order to send XLM (a.k.a. lumens) from one account to another `send-payment` command needs 3 things:
+
+* source account seed to sign the transaction
+* receiving account address
+* amount of XLM to send
+
+Since we funded the issuer account with XLMs in the example above, we'll use it as a source account, but of course any account that has lumens can be used instead:
+
+```sh
+$ stellar-mc send-payment '{"from": "'$(cat issuer)'",
+                            "to": "'$(cat distributor.pub)'",
+                            "amount": "42.0"}'
+
+2018/01/30 16:12:19 sending 42.0 XLM from GDK5BSGYV2XFMO6H7OFTZDLJ2LFXTGMZLC4267OJQ4EASOFDBCELGBOA to GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F
+```
+
+We just sent 42 lumens from the issuer to the distribution account. Let's check the distribution account's balance:
+
+```sh
+$ stellar-mc load-account $(cat distributor.pub) | jq '.balances'
+```
+```json
+{
+  "balance": "42.0000000",
+  "limit": "42.0000000",
+  "asset_type": "credit_alphanum4",
+  "asset_code": "YUM",
+  "asset_issuer": "GBW2U2GEWVD7GDTQPPJSDGE4SRYXN3USYZKNNI6EPVHUHROS47S6NUZJ"
+},
+{
+  "balance": "10041.9999600",
+  "asset_type": "native"
+}
+```
+
+notice it went from `9999.9999600` to `10041.9999600` and is now up by 42 lumens.
 
 ## Transaction Options
 
 When submitting a transaction to Stellar there are several [transaction options](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#set-options) that could be set.
 
-`stellar-mc` has a `--tx-options` flag that takes these options as JSON and sets them on a transaction before it is submitted.
+`stellar-mc` has a `--set-options` flag that takes these options as JSON and sets them on a transaction before it is submitted.
 
-It can also be combined with `--send-payment`, `--change-trust`, `--new-tx` and any other transactions.
+All the transaction commands such as `send-payment`, `change-trust`, `new-tx` and others have this optional flag.
 
 ### Adding Discoverablity and Meta Information
 
 To continue the [issuing a new token](#issuing-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
 
-In order to discover information about a particular token Stellar would look at a "home domain" property of an account and then it will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "`https://home-domain/.well-known/stellar.toml`".
+In order to discover information about a particular token Stellar would look at the "home domain" property of an account and then it will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "`https://home-domain/.well-known/stellar.toml`".
 
-Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--tx-options`:
+Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--set-options`:
 
 ```sh
-$ ./stellar-mc --new-tx '{"source-account": "'$(cat issuer)'"}' \
-               --tx-options '{"home-domain": "dotkam.com"}'
+$ stellar-mc new-tx '{"source_account": "'$(cat issuer)'"}' \
+             --set-options '{"home_domain": "dotkam.com"}'
 ```
 
-> _will discuss `--new-tx` later as it is still work in progress to include other transaction operations_
+> _will discuss `new-tx` later as it is still work in progress to include other transaction operations_
 
 and now the issuer account is linked to its home domain where Stellar can find more details about it:
 
 ```sh
-$ ./stellar-mc --account-details $(cat issuer.pub) | jq '.home_domain'
+$ stellar-mc load-account $(cat issuer.pub) | jq '.home_domain'
 "dotkam.com"
 ```
 ### Setting Inflation Destination
@@ -447,24 +494,24 @@ Another example of using Stellar transaction options would be setting an inflati
 
 > _The Stellar distributed network has a built-in, fixed, nominal inflation mechanism. New lumens are added to the network at the rate of 1% each year. Each week, the protocol distributes these lumens to any account that gets over .05% of the “votes” from other accounts in the network_ (from [Stellar documentation](https://www.stellar.org/developers/guides/concepts/inflation.html))
 
-Inflation destination can be set via `--tx-options`. For example let's set an inflation destination on the distribution account from the examples above:
+Inflation destination can be set via `--set-options`. For example let's set an inflation destination on the distribution account from the examples above:
 
 ```sh
-$ ./stellar-mc --new-tx '{"source-account": "'$(cat distributor)'"}' \
-               --tx-options '{"inflation-destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ stellar-mc new-tx '{"source_account": "'$(cat distributor)'"}' \
+             --set-options '{"inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 ```
 
 We can combine other options, let's add a home domain as well:
 ```sh
-./stellar-mc --new-tx '{"source-account": "'$(cat distributor)'"}' \
-             --tx-options '{"home-domain": "dotkam.com",
-                            "inflation-destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ stellar-mc new-tx '{"source_account": "'$(cat distributor)'"}' \
+             --set-options '{"home_domain": "dotkam.com",
+                             "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 ```
 
 and we can check that both options were set successfully:
 
 ```sh
-$ ./stellar-mc --account-details $(cat distributor.pub) | jq '.home_domain, .inflation_destination'
+$ stellar-mc load-account $(cat distributor.pub) | jq '.home_domain, .inflation_destination'
 "dotkam.com"
 "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"
 ```

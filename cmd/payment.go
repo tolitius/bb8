@@ -35,6 +35,10 @@ type tokenPayment struct {
 
 func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
 
+	if t.Token == "" {
+		t.Token = "XLM"
+	}
+
 	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
 
 	var payment b.PaymentBuilder
