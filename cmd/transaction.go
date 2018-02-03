@@ -143,7 +143,13 @@ type txOptions struct {
 	MasterWeight  *b.MasterWeight  `json:"master_weight"`
 	InflationDest *b.InflationDest `json:"inflation_destination"`
 	Thresholds    *b.Thresholds
+	AddSigner     *b.Signer `json:"add_signer"`
+	RemoveSigner  *b.Signer `json:"remove_signer"`
+
 	//TODO: add all transaction options
+
+	// ClearFlags    *b.ClearFlag     `json:"clear_flags"`
+	// SetFlags      *b.SetFlag       `json:"set_flag"`
 }
 
 func parseOptions(options string) b.SetOptionsBuilder {
