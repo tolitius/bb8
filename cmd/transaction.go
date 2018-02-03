@@ -142,13 +142,8 @@ type txOptions struct {
 	HomeDomain    *b.HomeDomain    `json:"home_domain"`
 	MasterWeight  *b.MasterWeight  `json:"master_weight"`
 	InflationDest *b.InflationDest `json:"inflation_destination"`
+	Thresholds    *b.Thresholds
 	//TODO: add all transaction options
-}
-
-func withOptions(command *cobra.Command) {
-	command.PersistentFlags().StringVarP(&txOptionsFlag, "set-options", "o", "",
-		`set one or more transaction options (i.e. inflation destination, home domain, master weight, etc). this command takes parameters in JSON.
-                             example: --set-options '{"home_domain": "stellar.org", "max_weight": 1, "inflation_destination": "address"}'`)
 }
 
 func parseOptions(options string) b.SetOptionsBuilder {
@@ -163,5 +158,12 @@ func parseOptions(options string) b.SetOptionsBuilder {
 	}
 
 	values := structValues(*topts)
+
 	return b.SetOptions(values...)
+}
+
+func withOptions(command *cobra.Command) {
+	command.PersistentFlags().StringVarP(&txOptionsFlag, "set-options", "o", "",
+		`set one or more transaction options (i.e. inflation destination, home domain, master weight, etc). this command takes parameters in JSON.
+                             example: --set-options '{"home_domain": "stellar.org", "max_weight": 1, "inflation_destination": "address"}'`)
 }
