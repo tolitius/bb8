@@ -203,18 +203,8 @@ It is later used to _sign_ Stellar transactions to confirm that it is "_really y
 
 Once the account keys are generated there are two ways to create / record an account in the Stellar ledger:
 
-* Using an existing account by sending a small token amount to a new account address
 * Using Stellar's Friendbot to fund a new _test_ account address on the testnet
-
-### Creating New Account
-
-BB-8 has `create-account` command that takes a source account's seed, a new account address, an initial amount and creates a new account:
-
-```sh
-$ bb create-account '{"source_account":"'$(cat foo)'", "new_account":"'$(cat bar.pub)'", "amount":"1.5"}'
-```
-
-will create a new "bar" account by sending 1.5 XLM to it from an account "foo".
+* Using an existing account by sending a small token amount to a new account address
 
 ### Funding Test Account
 
@@ -226,7 +216,28 @@ BB-8 has `fund` command that takes an account's address and funds it a good amou
 $ bb fund $(cat foo.pub)
 ```
 
-here we used a `foo.pub` address that we generated above. Next, we'll look at this account on the real, distributed Stellar ledger.
+here we used a `foo.pub` address that we generated above. We'll look at this account on the real, distributed Stellar ledger in the [Account Details](#account-details) section.
+
+### Creating New Account
+
+BB-8 has `create-account` command that takes a source account's seed, a new account address, an initial amount and creates a new account.
+
+Since a new account needs an address before it can be created, let's generate keys for it:
+
+```sh
+$ bb gen-keys bar
+2018/01/30 15:17:12 keys are created and stored in: bar.pub and bar
+```
+
+At this moment this new account "bar" does _not yet exist_ on the Stellar ledger, and would need to be "created".
+
+Since account "foo" was funded lumens in the step above it could be used as a source account to create "bar":
+
+```sh
+$ bb create-account '{"source_account":"'$(cat foo)'", "new_account":"'$(cat bar.pub)'", "amount":"1.5"}'
+```
+
+this would create a new "bar" account by sending 1.5 XLM to it from an account "foo".
 
 ## Account Details
 
