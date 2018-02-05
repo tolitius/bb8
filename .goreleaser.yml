@@ -22,5 +22,7 @@ brew:
   folder: Formula
   homepage: "https://github.com/tolitius/bb8"
   description: "a command line interface to Stellar networks"
+  test: |
+    bb version
   install: |
     bin.install "bb"
