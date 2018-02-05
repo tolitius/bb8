@@ -28,12 +28,13 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Add Memo](#add-memo)
 - [Transaction Options](#transaction-options)
   - [Add Discoverablity and Meta Information](#add-discoverablity-and-meta-information)
-  - [Inflation Destination](#set-inflation-destination)
+  - [Inflation Destination](#inflation-destination)
   - [Set and Clear Flags](#set-and-clear-flags)
   - [Thresholds](#thresholds)
   - [Master Weight](#master-weight)
   - [Add and Remove Signers](#add-and-remove-signers)
 - [Stream Stellar Events](#stream-stellar-events)
+- [Help](#help)
 - [License](#license)
 
 ## Why
@@ -683,17 +684,27 @@ $ bb new-tx '{"source_account": "'$(cat foo)'"}'
 
 ### Master Weight
 
+A master key weight can be changed with a `"master_weight"` option:
+
 ```sh
 $ bb new-tx '{"source_account": "'$(cat foo)'"}'
             --set-options '{"master_weight": 42}'
 ```
 
+Note that:
+
+> _If the weight of the master key is ever updated to 0, the master key is considered to be an invalid key and you cannot sign any transactions with it (even for operations with a threshold value of 0). If there are other signers listed on the account, they can still continue to sign transactions._" (Stellar [docs](https://www.stellar.org/developers/guides/concepts/multi-sig.html#additional-signing-keys))
+
 ### Add and Remove Signers
+
+If a transaction is composed out of [operations on multiple accounts](https://www.stellar.org/developers/guides/concepts/operations.html#transactions-involving-multiple-accounts) it would need signatures of all these accounts. Signer could be added or later removed with `"add_signer"` and `"remove_signer"` options:
 
 ```sh
 $ bb new-tx '{"source_account": "'$(cat foo)'"}'
             --set-options '{"add_signer": {"address": "'$(cat bar.pub)'", "weight": 3}}'
 ```
+
+notice the `"weight"` option, it could later be changed. Setting it to `0` would remove a signer, or it can be removed with the `"remove_signer"` option:
 
 ```sh
 $ bb new-tx '{"source_account": "'$(cat foo)'"}'
@@ -783,6 +794,51 @@ total fees paid: 2500
 beautiful!
 
 This and much more is brought to you by the power of command line.
+
+## Help
+
+All BB-8 commands and options have descriptions and examples that are available with a `--help` / `-h` flag.
+
+For example here is how to get more details about the `send-payment` command:
+
+```sh
+$ bb send-payment --help
+send payment of any asset from one account to another. this command takes parameters in JSON.
+
+example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
+         send-payment '{"from": "seed", "to": "address", "amount": "42.0", "memo": "forty two"}'
+         send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
+
+         notice there is no issuer when sending XLM since it's a native asset.
+
+Usage:
+  bb send-payment [args]
+
+Flags:
+  -h, --help                 help for send-payment
+  -o, --set-options string   set one or more transaction options. this command takes parameters in JSON. supportted options are:
+
+         * inflation_destination
+         * home_domain
+         * master_weight
+         * thresholds
+         * set_flags
+         * remove_flags
+         * add_signer
+         * remove_signer
+
+     example: --set-options '{"home_domain": "stellar.org",
+                              "max_weight": 1,
+                              "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+
+              --set-options '{"thresholds": {"low": 1, "high": 1},
+                              "set_flags": ["auth_revocable", "auth_required"]}'
+
+              --set-options '{"add_signer": {"address": "GCU2XASMVOOJCUAEPOEL7SHNIRJA3IRSDIE4UTXA4QLJHMB5BFXOLNOB",
+                                             "weight": 3}}'
+```
+
+This kind of help is available for all the commands. Feel free to submit an issue in case it is missing, or more details about the command, option, flag would be helpful.
 
 ## License
 

@@ -214,6 +214,24 @@ func parseOptions(options string) b.SetOptionsBuilder {
 
 func withOptions(command *cobra.Command) {
 	command.PersistentFlags().StringVarP(&txOptionsFlag, "set-options", "o", "",
-		`set one or more transaction options (i.e. inflation destination, home domain, master weight, etc). this command takes parameters in JSON.
-                             example: --set-options '{"home_domain": "stellar.org", "max_weight": 1, "inflation_destination": "address"}'`)
+		`set one or more transaction options. this command takes parameters in JSON. supportted options are:
+
+         * inflation_destination
+         * home_domain
+         * master_weight
+         * thresholds
+         * set_flags
+         * remove_flags
+         * add_signer
+         * remove_signer
+
+     example: --set-options '{"home_domain": "stellar.org",
+                              "max_weight": 1,
+                              "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+
+              --set-options '{"thresholds": {"low": 1, "high": 1},
+                              "set_flags": ["auth_revocable", "auth_required"]}'
+
+              --set-options '{"add_signer": {"address": "GCU2XASMVOOJCUAEPOEL7SHNIRJA3IRSDIE4UTXA4QLJHMB5BFXOLNOB",
+                                             "weight": 3}}'`)
 }
