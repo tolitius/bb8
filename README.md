@@ -10,26 +10,30 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Homebrew](#homebrew)
   - [Download, Unpack, Go](#download-unpack-go)
   - [Or just Go](#or-just-go)
-- [Choosing Stellar Network](#choosing-stellar-network)
+- [Choose Stellar Network](#choose-stellar-network)
 - [Buttons to Push](#buttons-to-push)
 - [Create Account Keys](#create-account-keys)
 - [Create Account](#create-account)
   - [Funding Test Account](#funding-test-account)
   - [Creating New Account](#creating-new-account)
 - [Account Details](#account-details)
-- [Issuing a New Token](#issuing-a-new-token)
+- [Issue a New Token](#issue-a-new-token)
   - [Issuer and Distributor](#issuer-and-distributor)
   - [Creating and funding accounts](#creating-and-funding-accounts)
   - [Do You Trust Me?](#do-you-trust-me)
-  - [Limitting Trustline](#limitting-trustline)
-- [Sending Payments](#sending-payments)
-  - [Sending Non Native Assets](#sending-non-native-assets)
-  - [Sending Native Assets](#sending-native-assets)
-  - [Adding Memo](#adding-memo)
+  - [Limit Trustline](#limit-trustline)
+- [Send Payments](#send-payments)
+  - [Send Non Native Assets](#send-non-native-assets)
+  - [Send Native Assets](#send-native-assets)
+  - [Add Memo](#add-memo)
 - [Transaction Options](#transaction-options)
-  - [Adding Discoverablity and Meta Information](#adding-discoverablity-and-meta-information)
-  - [Setting Inflation Destination](#setting-inflation-destination)
-- [Streaming Stellar Events](#streaming-stellar-events)
+  - [Add Discoverablity and Meta Information](#add-discoverablity-and-meta-information)
+  - [Inflation Destination](#set-inflation-destination)
+  - [Set and Clear Flags](#set-and-clear-flags)
+  - [Thresholds](#thresholds)
+  - [Master Weight](#master-weight)
+  - [Add and Remove Signers](#add-and-remove-signers)
+- [Stream Stellar Events](#stream-stellar-events)
 - [License](#license)
 
 ## Why
@@ -87,6 +91,10 @@ There are multiple ways to install BB-8. The easiest one is with [Homebrew](http
 ### Homebrew
 
 ```sh
+$ brew tap tolitius/bb8
+```
+
+```sh
 $ brew install bb8
 ==> Downloading https://github.com/tolitius/bb8/releases/download..
 ######################################################################## 100.0%
@@ -131,7 +139,7 @@ $ $GOBIN/bb --help
 
 Or clone the repo and `go build` it if you prefer a bare minimum.
 
-## Choosing Stellar Network
+## Choose Stellar Network
 
 By default BB-8 uses the Stellar [test network](https://www.stellar.org/developers/guides/concepts/test-net.html) a.k.a. testnet.
 
@@ -320,7 +328,7 @@ $ bb load-account $(cat foo.pub) | jq '.balances'
 
 it is telling us that the Friendbot from the step above did what we asked and funded this account with `10,000` lumens (a.k.a. as "native" Stellar currency).
 
-## Issuing a New Token
+## Issue a New Token
 
 > _One of Stellar’s most powerful features is the ability to trade any kind of asset, US dollars, Nigerian naira, bitcoins, special coupons, ICO tokens or just about anything you like. ([Stellar Developers Guide](https://www.stellar.org/developers/guides/issuing-assets.html))_
 
@@ -421,7 +429,7 @@ Nice! We have established a trustline for YUMs and almost ready to distribute th
 
 Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#change-trust)" operation in Stellar speak. By default this operation would allow a source account to receive up to `922337203685.4775807` (`MaxInt64  = 1<<63 - 1`) YUMs. But it has an additional `limit` parameter that sets a cap on how much YUMs an account may get.
 
-### Limitting Trustline
+### Limit Trustline
 
 The `change-trust` command takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
@@ -457,9 +465,9 @@ All the YUMmy details could be seen on any ledger interface. For example this is
 
 notice a "Change Trust" operation and a zero balance (for now).
 
-## Sending Payments
+## Send Payments
 
-### Sending Non Native Assets
+### Send Non Native Assets
 
 In order to send a payment of a non native assset, which is any token on a Stellar network besides `XLM`, we need to know several things:
 
@@ -510,7 +518,7 @@ Source (i.e. `"from"`) of the payment could be any account, not just the issuer,
 
 Excellent, we are now ready to distribute YUMs. We can use the same `send-payment` command with different account addresses to do that.
 
-### Sending Native Assets
+### Send Native Assets
 
 In order to send XLM (a.k.a. lumens) from one account to another `send-payment` command needs 3 things:
 
@@ -549,7 +557,7 @@ $ bb load-account $(cat distributor.pub) | jq '.balances'
 
 notice it went from `9999.9999600` to `10041.9999600` and is now up by 42 lumens.
 
-### Adding Memo
+### Add Memo
 
 Transactions also take an optional [memo](https://www.stellar.org/developers/guides/concepts/transactions.html#memo) field that is used for custom metadata.
 For example if you are a bank that is receiving or sending payments on behalf of other people, you might include the actual person the payment is meant for here.
@@ -572,7 +580,7 @@ BB-8 has a `--set-options` flag that takes these options as JSON and sets them o
 
 All the transaction commands such as `send-payment`, `change-trust`, `new-tx` and others have this optional flag.
 
-### Adding Discoverablity and Meta Information
+### Add Discoverablity and Meta Information
 
 To continue the [issuing a new token](#issuing-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
 
@@ -593,7 +601,7 @@ and now the issuer account is linked to its home domain where Stellar can find m
 $ bb load-account $(cat issuer.pub) | jq '.home_domain'
 "dotkam.com"
 ```
-### Setting Inflation Destination
+### Inflation Destination
 
 Another example of using Stellar transaction options would be setting an inflation destination on the account.
 
@@ -625,7 +633,74 @@ Here is a prettier version of the options that were set in this transaction on [
 
 <img src="doc/img/tx-options.png">
 
-## Streaming Stellar Events
+### Set and Clear Flags
+
+There are 3 different flags that can be set on the account that are set on issuers of assets:
+
+
+* Authorization required: Requires the issuing account to give other accounts permission before they can hold the issuing account’s credit.
+* Authorization revocable: Allows the issuing account to revoke its credit held by other accounts.
+* Authorization immutable: If this is set then none of the authorization flags can be set and the account can never be deleted.
+
+These flags can be set or cleared with `"set_flags"` and `"clear_flags"` transaction options. Here are some examples:
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"set_flags": ["auth_revocable", "auth_required"]}'
+```
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"clear_flags": ["auth_immutable", "auth_required"]}'
+```
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"set_flags": ["auth_revocable"],
+                            "clear_flags": ["auth_required"]}'
+```
+
+BB-8 would validate these flags and will let you know when they are invalid:
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"set_flags": ["auth_revocable", "auth_immu"]}'
+```
+```
+>> unknown flag to set: "auth_immu". possible flag values: [auth_required auth_revocable auth_immutable]
+```
+
+### Thresholds
+
+Transaction operations fall under a specific threshold category: _low_, _medium_, or _high_. The threshold for a given level can be set to any number from 0-255. This threshold is the amount of signature weight required to authorize an operation at that level. Here is [more about thresholds](https://www.stellar.org/developers/guides/concepts/multi-sig.html#thresholds) from Stellar documentation.
+
+Threshold could be set with `--set-options` via a `threshold` map:
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"thresholds": {"low": 42, "high": 3}}'
+```
+
+### Master Weight
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"master_weight": 42}'
+```
+
+### Add and Remove Signers
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"add_signer": {"address": "'$(cat bar.pub)'", "weight": 3}}'
+```
+
+```sh
+$ bb new-tx '{"source_account": "'$(cat foo)'"}'
+            --set-options '{"remove_signer": {"address": "'$(cat bar.pub)'"}}'
+```
+
+## Stream Stellar Events
 
 BB-8 has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:
 

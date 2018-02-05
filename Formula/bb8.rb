@@ -10,6 +10,6 @@ class Bb8 < Formula
   end
 
   test do
-    
+    bb version
   end
 end
