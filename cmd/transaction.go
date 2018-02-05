@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/spf13/cobra"
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/xdr"
 )
 
 var txOptionsFlag string
@@ -138,18 +140,60 @@ func (t *txOperations) buildTransaction(
 	return tx
 }
 
+type setFlags []string
+type clearFlags []string
+
+var validFlags = []string{"auth_required", "auth_revocable", "auth_immutable"}
+
 type txOptions struct {
 	HomeDomain    *b.HomeDomain    `json:"home_domain"`
 	MasterWeight  *b.MasterWeight  `json:"master_weight"`
 	InflationDest *b.InflationDest `json:"inflation_destination"`
 	Thresholds    *b.Thresholds
-	AddSigner     *b.Signer `json:"add_signer"`
-	RemoveSigner  *b.Signer `json:"remove_signer"`
+	AddSigner     *b.Signer   `json:"add_signer"`
+	RemoveSigner  *b.Signer   `json:"remove_signer"`
+	SetFlags      *setFlags   `json:"set_flags"`
+	ClearFlags    *clearFlags `json:"clear_flags"`
+}
 
-	//TODO: add all transaction options
+// MutateSetOptions for setFlags sets the SetOptionsOp's setFlags field
+func (m setFlags) MutateSetOptions(o *xdr.SetOptionsOp) (err error) {
 
-	// ClearFlags    *b.ClearFlag     `json:"clear_flags"`
-	// SetFlags      *b.SetFlag       `json:"set_flag"`
+	for _, flag := range m {
+
+		switch flag {
+		case "auth_required":
+			b.SetAuthRequired().MutateSetOptions(o)
+		case "auth_revocable":
+			b.SetAuthRevocable().MutateSetOptions(o)
+		case "auth_immutable":
+			b.SetAuthImmutable().MutateSetOptions(o)
+		default:
+			return fmt.Errorf("unknown flag to set: \"%s\". possible flag values: %+v", flag, validFlags)
+		}
+	}
+
+	return
+}
+
+// MutateSetOptions for clearFlags sets the ClearOptionsOp's clearFlags field
+func (m clearFlags) MutateSetOptions(o *xdr.SetOptionsOp) (err error) {
+
+	for _, flag := range m {
+
+		switch flag {
+		case "auth_required":
+			b.ClearAuthRequired().MutateSetOptions(o)
+		case "auth_revocable":
+			b.ClearAuthRevocable().MutateSetOptions(o)
+		case "auth_immutable":
+			b.ClearAuthImmutable().MutateSetOptions(o)
+		default:
+			return fmt.Errorf("unknown flag to clear: \"%s\". possible flag values: %+v", flag, validFlags)
+		}
+	}
+
+	return
 }
 
 func parseOptions(options string) b.SetOptionsBuilder {
