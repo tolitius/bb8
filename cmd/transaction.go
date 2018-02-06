@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 
@@ -12,38 +13,38 @@ import (
 	"github.com/stellar/go/xdr"
 )
 
-var newTransactionCmd = &cobra.Command{
-	Use:   "new-tx [args]",
-	Short: "build and submit a new transaction",
-	Long: `build and submit a new transaction. this command takes parameters in JSON.
-"operations" and "signers" are optional, if there are no "signers", the "source_account" seed will be used to sign this transaction.
-
-example: new-tx '{"source_account": "address or seed", {"operations": "trust": {"code": "XYZ", "issuer_address": "address"}}, "signers": ["seed1", "seed2"]}'
-         new-tx '{"source_account": "address or seed"}' --set-options '{"home_domain": "stellar.org", "max_weight": 1}'`,
-	Args: cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-
-		nt := &newTransaction{}
-		if err := json.Unmarshal([]byte(args[0]), nt); err != nil {
-			log.Fatal(err)
-		}
-		nt.Operations.SourceAccount = &b.SourceAccount{nt.SourceAccount}
-		tx := nt.Operations.buildTransaction(conf, parseOptions(txOptionsFlag))
-		signers := nt.Signers
-		if signers == nil {
-			signers = []string{nt.SourceAccount}
-		}
-		submitTransaction(conf.client, tx, signers...)
-	},
-}
-
 var submitTransactionCmd = &cobra.Command{
-	Use:   "submit-tx [base64-encoded-transaction]",
+	Use:   "submit [base64-encoded-transaction]",
 	Short: "submit a base64 encoded transaction",
 	Long:  `given a base64 encoded Stellar transaction submit it to the network.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		submitTransactionB64(conf.client, args[0])
+	},
+	DisableFlagsInUseLine: true,
+}
+
+var signTransactionCmd = &cobra.Command{
+	Use:   "sign [signers, base64-encoded-transaction]",
+	Short: "sign a base64 encoded transaction",
+	Long:  `given a set of signers (seeds) and a base64 encoded Stellar transaction sign it with all the signers and encode it back to base64.`,
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+
+		var signers []string
+		if err := json.Unmarshal([]byte(args[0]), &signers); err != nil {
+			log.Fatal(err)
+		}
+
+		envelope := decodeXDR(args[1])
+		signEnvelope(envelope, signers...)
+		encoded, err := envelope.Base64()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Print(encoded)
 	},
 	DisableFlagsInUseLine: true,
 }
@@ -92,35 +93,9 @@ func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed 
 	return submitTransactionB64(stellar, txeB64)
 }
 
-type txOperations struct {
-	SourceAccount *b.SourceAccount
-	//TODO: add all transaction operations
-}
+func decodeXDR(base64encoded string) *xdr.TransactionEnvelope {
 
-type newTransaction struct {
-	Operations    txOperations
-	SourceAccount string `json:"source_account"`
-	Signers       []string
-}
-
-func (t *txOperations) toMutators() []b.TransactionMutator {
-
-	values := structValues(*t)
-	muts := make([]b.TransactionMutator, len(values))
-
-	for i := 0; i < len(values); i++ {
-		switch values[i].(type) {
-		case b.TransactionMutator:
-			muts[i] = values[i].(b.TransactionMutator)
-		default:
-			log.Fatalf("%+v is not a valid transaction operation", values[i])
-		}
-	}
-
-	return muts
-}
-
-func decodeXDR(base64encoded string) (tx xdr.TransactionEnvelope) {
+	var tx xdr.TransactionEnvelope
 
 	rawr := strings.NewReader(base64encoded)
 	b64r := base64.NewDecoder(base64.StdEncoding, rawr)
@@ -128,27 +103,71 @@ func decodeXDR(base64encoded string) (tx xdr.TransactionEnvelope) {
 	_, err := xdr.Unmarshal(b64r, &tx)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("could not decode a base64 XDR due to: %v", err)
 	}
 
-	return tx
+	return &tx
 }
 
-func (t *txOperations) buildTransaction(
-	conf *config,
-	options b.SetOptionsBuilder) *b.TransactionBuilder {
+type txHeader struct {
+	sourceAccount string
+	sequence      *b.Sequence
+}
 
-	tx, err := b.Transaction(
-		t.SourceAccount,
-		conf.network,
-		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
-		options)
+func (header txHeader) newTx(conf *config) (muts []b.TransactionMutator) {
+
+	var seq b.TransactionMutator = header.sequence
+
+	if header.sequence == nil {
+		seq = b.AutoSequence{conf.client}
+	}
+
+	muts = []b.TransactionMutator{
+		b.Defaults{},
+		b.SourceAccount{header.sourceAccount},
+		seq,
+		conf.network}
+
+	return muts
+}
+
+func makeTransactionEnvelope(muts []b.TransactionMutator) *b.TransactionEnvelopeBuilder {
+
+	txe := b.TransactionEnvelopeBuilder{}
+	txe.Init()
+
+	txe.MutateTX(muts...)
+	txe.MutateTX(b.Defaults{})
+
+	return &txe
+}
+
+func signEnvelope(envelope *b.TransactionEnvelopeBuilder, seeds ...string) {
+	for _, seed := range seeds {
+		signer := b.Sign{Seed: seed}
+		signer.MutateTransactionEnvelope(envelope)
+	}
+}
+
+func submitEnvelope(envelope *b.TransactionEnvelopeBuilder, client *horizon.Client) int32 {
+
+	txeB64, err := envelope.Base64()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tx.Mutate(t.toMutators()...)
+	return submitTransactionB64(client, txeB64)
+}
 
-	return tx
+func wrapEnvelope(envelope *xdr.TransactionEnvelope, muts []b.TransactionMutator) *b.TransactionEnvelopeBuilder {
+
+	txe := b.TransactionEnvelopeBuilder{E: envelope}
+	txe.Init()
+
+	txe.MutateTX(muts...)
+	txe.E.Tx.Fee = 0
+	txe.MutateTX(b.Defaults{})
+
+	return &txe
 }

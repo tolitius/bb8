@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -15,17 +16,52 @@ var changeTrustCmd = &cobra.Command{
 this command takes parameters in JSON and has an optional "limit" param, setting it to "0" removes the trustline.
 
 example: change-trust '{"source_account": "seed", "code": "XYZ", "issuer_address": "address", "limit": "42.0"}'`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		ct := &changeTrust{}
 		if err := json.Unmarshal([]byte(args[0]), ct); err != nil {
 			log.Fatal(err)
 		}
-		tx := ct.set(conf, parseOptions(txOptionsFlag))
-		submitTransaction(conf.client, tx, ct.SourceAccount)
+
+		if standAloneFlag {
+			header := txHeader{sourceAccount: ct.SourceAccount}.
+				newTx(conf)
+
+			ops := append(header, ct.makeOp()...)
+
+			envelope := makeTransactionEnvelope(ops)
+			signEnvelope(envelope, ct.SourceAccount)
+			submitEnvelope(envelope, conf.client)
+		} else {
+			if len(args) == 1 {
+
+				header := txHeader{sourceAccount: ct.SourceAccount}.
+					newTx(conf)
+
+				ops := append(header, ct.makeOp()...)
+				envelope := makeTransactionEnvelope(ops)
+				encoded, err := envelope.Base64()
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				fmt.Print(encoded)
+
+			} else {
+				parent := decodeXDR(args[1])
+				envelope := wrapEnvelope(parent, ct.makeOp())
+				encoded, err := envelope.Base64()
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				fmt.Print(encoded)
+			}
+		}
 	},
-	DisableFlagsInUseLine: true,
 }
 
 type changeTrust struct {
@@ -34,26 +70,18 @@ type changeTrust struct {
 	Code, Limit   string
 }
 
-func (ct *changeTrust) set(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
+func (ct *changeTrust) makeOp() (muts []b.TransactionMutator) {
 
-	source := seedToPair(ct.SourceAccount)
+	// source := seedToPair(ct.SourceAccount)
 
 	var limit = b.MaxLimit
 	if ct.Limit != "" {
 		limit = b.Limit(ct.Limit)
 	}
 
-	tx, err := b.Transaction(
-		b.SourceAccount{source.Address()},
-		b.AutoSequence{conf.client},
-		conf.network,
-		b.Trust(ct.Code, ct.IssuerAddress, limit),
-		txOptions,
-	)
+	muts = []b.TransactionMutator{
+		b.SourceAccount{AddressOrSeed: ct.SourceAccount},
+		b.Trust(ct.Code, ct.IssuerAddress, limit)}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tx
+	return muts
 }

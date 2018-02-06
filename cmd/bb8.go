@@ -38,7 +38,6 @@ func AddCommands() {
 	Bb8Cmd.AddCommand(submitTransactionCmd)
 	Bb8Cmd.AddCommand(changeTrustCmd)
 	Bb8Cmd.AddCommand(sendPaymentCmd)
-	Bb8Cmd.AddCommand(newTransactionCmd)
 	Bb8Cmd.AddCommand(streamCmd)
 	Bb8Cmd.AddCommand(createAccountCmd)
 	Bb8Cmd.AddCommand(setOptionsCmd)
@@ -46,9 +45,9 @@ func AddCommands() {
 }
 
 func init() {
-	withOptions(newTransactionCmd)
 	withOptions(sendPaymentCmd)
-	withOptions(changeTrustCmd)
+
+	withStandAlone(changeTrustCmd)
 }
 
 // Execute adds sub commands to Bb8Cmd and sets all the command line flags
@@ -132,5 +131,5 @@ func withStandAlone(command *cobra.Command) {
 		`sign and submit transaction. will use source account's seed to sign it
 
       example: send-payment -s '{"from": "seed", "to": "address", "amount": "42.0"}'
-	           create-account -s '{"source_account":"seed", "new_account":"address", "amount":"1.5"}'`)
+               create-account -s '{"source_account":"seed", "new_account":"address", "amount":"1.5"}'`)
 }
