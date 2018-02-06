@@ -36,7 +36,9 @@ var signTransactionCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		envelope := decodeXDR(args[1])
+		xdr := decodeXDR(args[1])
+		envelope := wrapEnvelope(xdr, nil)
+
 		signEnvelope(envelope, signers...)
 		encoded, err := envelope.Base64()
 
@@ -165,9 +167,11 @@ func wrapEnvelope(envelope *xdr.TransactionEnvelope, muts []b.TransactionMutator
 	txe := b.TransactionEnvelopeBuilder{E: envelope}
 	txe.Init()
 
-	txe.MutateTX(muts...)
-	txe.E.Tx.Fee = 0
-	txe.MutateTX(b.Defaults{})
+	if muts != nil {
+		txe.MutateTX(muts...)
+		txe.E.Tx.Fee = 0
+		txe.MutateTX(b.Defaults{})
+	}
 
 	return &txe
 }

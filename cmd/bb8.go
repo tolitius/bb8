@@ -35,13 +35,14 @@ func AddCommands() {
 	Bb8Cmd.AddCommand(genKeysCmd)
 	Bb8Cmd.AddCommand(fundCmd)
 	Bb8Cmd.AddCommand(loadAccountCmd)
-	Bb8Cmd.AddCommand(submitTransactionCmd)
 	Bb8Cmd.AddCommand(changeTrustCmd)
 	Bb8Cmd.AddCommand(sendPaymentCmd)
 	Bb8Cmd.AddCommand(streamCmd)
 	Bb8Cmd.AddCommand(createAccountCmd)
 	Bb8Cmd.AddCommand(setOptionsCmd)
 	Bb8Cmd.AddCommand(decodeCmd)
+	Bb8Cmd.AddCommand(signTransactionCmd)
+	Bb8Cmd.AddCommand(submitTransactionCmd)
 }
 
 func init() {
