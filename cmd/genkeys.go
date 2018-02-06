@@ -11,7 +11,7 @@ import (
 
 var genKeysCmd = &cobra.Command{
 	Use:   "gen-keys [file-name]",
-	Short: "create a pair of keys (in two files \"file-name.pub\" and \"file-name\").",
+	Short: "create a pair of keys (in two files \"file-name.pub\" and \"file-name\")",
 	Long: `A Stellar account is represented as a pair of keys: public (a.k.a. address) and private (a.k.a. seed).
 given the file name/path gen-keys generates these pair of keys in "file-name.pub" and "file-name".`,
 	Args: cobra.ExactArgs(1),

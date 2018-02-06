@@ -160,22 +160,24 @@ If `STELLAR_NETWORK` is unset or is set to "`test`" a testnet will be used.
 $ bb --help
 ```
 ```
-bb is a command line interface to Stellar (https://www.stellar.org/) networks.
+BB-8 is a command line interface to Stellar (https://www.stellar.org/) networks.
 
 Usage:
   bb [command]
 
 Available Commands:
-  change-trust create, update, or delete a trustline
-  fund         fund a test account
-  gen-keys     create a pair of keys (in two files "file-name.pub" and "file-name").
-  help         Help about any command
-  load-account load and return account details
-  new-tx       build and submit a new transaction
-  send-payment send payment from one account to another
-  stream       stream "ledger", "payment" and "tranasaction" events.
-  submit-tx    submit a base64 encoded transaction
-  version      print the version number of bb
+  change-trust   create, update, or delete a trustline
+  create-account creates a new account
+  fund           fund a test account
+  gen-keys       create a pair of keys (in two files "file-name.pub" and "file-name")
+  help           Help about any command
+  load-account   load and return account details
+  new-tx         build and submit a new transaction
+  send-payment   send payment from one account to another
+  set-options    set options on the account
+  stream         stream "ledger", "payment" and "tranasaction" events
+  submit-tx      submit a base64 encoded transaction
+  version        print the version number of bb
 
 Flags:
   -h, --help   help for bb
@@ -577,24 +579,24 @@ $ bb send-payment '{"from": "'$(cat issuer)'",
 
 When submitting a transaction to Stellar there are several [transaction options](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#set-options) that could be set.
 
-BB-8 has a `--set-options` flag that takes these options as JSON and sets them on a transaction before it is submitted.
+BB-8 has a `set-options` command that takes an account and these options as JSON and sets them on a transaction before it is submitted.
 
-All the transaction commands such as `send-payment`, `change-trust`, `new-tx` and others have this optional flag.
+There is also a `--set-options` _flag_ that is available for all transaction commands such as `send-payment`, `change-trust`, `new-tx` and others.
+
+`set-options` command and `--set-options` flag have exactly the same syntax, hence the examples below are all valid for `--set-options` as well.
 
 ### Add Discoverablity and Meta Information
 
-To continue the [issuing a new token](#issuing-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
+To continue the [issue a new token](#issue-a-new-token) example, whenever a new token/asset is introduced to Stellar network it is important to provide clear information about what this token/asset represents. This info can be discovered and displayed by clients so users know exactly what they are getting when they hold your asset. Here is [more about it](https://www.stellar.org/developers/guides/issuing-assets.html#discoverablity-and-meta-information) from Stellar documentation.
 
 In order to discover information about a particular token Stellar would look at the "home domain" property of an account and then it will try to read a "[stellar.toml](https://www.stellar.org/developers/guides/concepts/stellar-toml.html)" file at "`https://home-domain/.well-known/stellar.toml`".
 
-Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account by `--set-options`:
+Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account with the `set-options` command:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat issuer)'"}' \
-            --set-options '{"home_domain": "dotkam.com"}'
+$ bb set-options '{"source_account": "'$(cat issuer)'",
+                   "home_domain": "dotkam.com"}'
 ```
-
-> _will discuss `new-tx` later as it is still work in progress to include other transaction operations_
 
 and now the issuer account is linked to its home domain where Stellar can find more details about it:
 
@@ -608,18 +610,18 @@ Another example of using Stellar transaction options would be setting an inflati
 
 > _The Stellar distributed network has a built-in, fixed, nominal inflation mechanism. New lumens are added to the network at the rate of 1% each year. Each week, the protocol distributes these lumens to any account that gets over .05% of the “votes” from other accounts in the network_ (from [Stellar documentation](https://www.stellar.org/developers/guides/concepts/inflation.html))
 
-Inflation destination can be set via `--set-options`. For example let's set an inflation destination on the distribution account from the examples above:
+Inflation destination can be set via `set-options`. For example let's set an inflation destination on the distribution account from the examples above:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat distributor)'"}' \
-            --set-options '{"inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ bb set-options '{"source_account": "'$(cat distributor)'",
+                   "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 ```
 
 We can combine other options, let's add a home domain as well:
 ```sh
-$ bb new-tx '{"source_account": "'$(cat distributor)'"}' \
-            --set-options '{"home_domain": "dotkam.com",
-                            "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ bb set-options '{"source_account": "'$(cat issuer)'",
+                   "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT",
+                   "home_domain": "dotkam.com"}'
 ```
 
 and we can check that both options were set successfully:
@@ -646,26 +648,26 @@ There are 3 different flags that can be set on the account that are set on issue
 These flags can be set or cleared with `"set_flags"` and `"clear_flags"` transaction options. Here are some examples:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"set_flags": ["auth_revocable", "auth_required"]}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "set_flags": ["auth_revocable", "auth_required"]}'
 ```
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"clear_flags": ["auth_immutable", "auth_required"]}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "clear_flags": ["auth_immutable", "auth_required"]}'
 ```
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"set_flags": ["auth_revocable"],
-                            "clear_flags": ["auth_required"]}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "set_flags": ["auth_revocable", "auth_required"],
+                   "clear_flags": ["auth_required"]}'
 ```
 
 BB-8 would validate these flags and will let you know when they are invalid:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"set_flags": ["auth_revocable", "auth_immu"]}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "set_flags": ["auth_revocable", "auth_immu"]}'
 ```
 ```
 >> unknown flag to set: "auth_immu". possible flag values: [auth_required auth_revocable auth_immutable]
@@ -675,11 +677,11 @@ $ bb new-tx '{"source_account": "'$(cat foo)'"}'
 
 Transaction operations fall under a specific threshold category: _low_, _medium_, or _high_. The threshold for a given level can be set to any number from 0-255. This threshold is the amount of signature weight required to authorize an operation at that level. Here is [more about thresholds](https://www.stellar.org/developers/guides/concepts/multi-sig.html#thresholds) from Stellar documentation.
 
-Threshold could be set with `--set-options` via a `threshold` map:
+Threshold could be set with `set-options` via a `thresholds` map:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"thresholds": {"low": 42, "high": 3}}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "thresholds": {"low": 42, "high": 3}}'
 ```
 
 ### Master Weight
@@ -687,8 +689,8 @@ $ bb new-tx '{"source_account": "'$(cat foo)'"}'
 A master key weight can be changed with a `"master_weight"` option:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"master_weight": 42}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "master_weight": 42}'
 ```
 
 Note that:
@@ -700,15 +702,15 @@ Note that:
 If a transaction is composed out of [operations on multiple accounts](https://www.stellar.org/developers/guides/concepts/operations.html#transactions-involving-multiple-accounts) it would need signatures of all these accounts. Signer could be added or later removed with `"add_signer"` and `"remove_signer"` options:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"add_signer": {"address": "'$(cat bar.pub)'", "weight": 3}}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "add_signer": {"address": "'$(cat bar.pub)'", "weight": 3}}'
 ```
 
 notice the `"weight"` option, it could later be changed. Setting it to `0` would remove a signer, or it can be removed with the `"remove_signer"` option:
 
 ```sh
-$ bb new-tx '{"source_account": "'$(cat foo)'"}'
-            --set-options '{"remove_signer": {"address": "'$(cat bar.pub)'"}}'
+$ bb set-options '{"source_account": "'$(cat foo)'",
+                   "remove_signer": {"address": "'$(cat bar.pub)'"}}'
 ```
 
 ## Stream Stellar Events
@@ -817,28 +819,49 @@ Usage:
 Flags:
   -h, --help                 help for send-payment
   -o, --set-options string   set one or more transaction options. this command takes parameters in JSON. supportted options are:
-
-         * inflation_destination
-         * home_domain
-         * master_weight
-         * thresholds
-         * set_flags
-         * remove_flags
-         * add_signer
-         * remove_signer
-
-     example: --set-options '{"home_domain": "stellar.org",
-                              "max_weight": 1,
-                              "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
-
-              --set-options '{"thresholds": {"low": 1, "high": 1},
-                              "set_flags": ["auth_revocable", "auth_required"]}'
-
-              --set-options '{"add_signer": {"address": "GCU2XASMVOOJCUAEPOEL7SHNIRJA3IRSDIE4UTXA4QLJHMB5BFXOLNOB",
-                                             "weight": 3}}'
+  ...
 ```
 
-This kind of help is available for all the commands. Feel free to submit an issue in case it is missing, or more details about the command, option, flag would be helpful.
+here is more about `set-options` command:
+
+```sh
+$ bb set-options -h
+set options on the account. this command takes parameters in JSON.
+given a "source_account" sets options on it. supported options are:
+
+  * inflation_destination
+  * home_domain
+  * master_weight
+  * thresholds
+  * set_flags
+  * remove_flags
+  * add_signer
+  * remove_signer
+
+example: set-options '{"source_account": "seed"
+                       "home_domain": "stellar.org"}'
+
+         set-options '{"source_account": "seed"
+                       "home_domain": "stellar.org",
+                       "max_weight": 1,
+                       "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+
+         set-options '{"source_account": "seed"
+                       "thresholds": {"low": 1, "high": 1},
+                       "set_flags": ["auth_revocable", "auth_required"]}'
+
+         set-options '{"source_account": "seed"
+                       "add_signer": {"address": "GCU2XASMVOOJCUAEPOEL7SHNIRJA3IRSDIE4UTXA4QLJHMB5BFXOLNOB",
+                                      "weight": 3}}'
+
+Usage:
+  bb set-options [args] [flags]
+
+Flags:
+  -h, --help   help for set-options
+```
+
+and so on. This kind of help is available for all the commands. Feel free to submit an issue in case it is missing, or more details about the command, option, flag would be helpful.
 
 ## License
 

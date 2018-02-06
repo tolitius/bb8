@@ -30,7 +30,7 @@ var paymentHandler = func(l h.Payment) {
 
 var streamCmd = &cobra.Command{
 	Use:   "stream",
-	Short: "stream \"ledger\", \"payment\" and \"tranasaction\" events.",
+	Short: "stream \"ledger\", \"payment\" and \"tranasaction\" events",
 	Long: `stream "ledger", "payment" and "tranasaction" events.
 events are streamed in JSON and will do so forever or for a period of time specified by a --seconds flag.
 
