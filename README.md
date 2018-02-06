@@ -659,7 +659,7 @@ $ bb set-options '{"source_account": "'$(cat foo)'",
 
 ```sh
 $ bb set-options '{"source_account": "'$(cat foo)'",
-                   "set_flags": ["auth_revocable", "auth_required"],
+                   "set_flags": ["auth_revocable"],
                    "clear_flags": ["auth_required"]}'
 ```
 
