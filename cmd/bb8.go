@@ -19,6 +19,7 @@ type config struct {
 }
 
 var conf *config
+var standAloneFlag bool
 
 // Bb8Cmd is BB-8's root command.
 // Other commands are added to Bb8Cmd as subcommands.
@@ -41,6 +42,7 @@ func AddCommands() {
 	Bb8Cmd.AddCommand(streamCmd)
 	Bb8Cmd.AddCommand(createAccountCmd)
 	Bb8Cmd.AddCommand(setOptionsCmd)
+	Bb8Cmd.AddCommand(decodeCmd)
 }
 
 func init() {
@@ -123,4 +125,12 @@ func structValues(s interface{}) []interface{} {
 	}
 
 	return values
+}
+
+func withStandAlone(command *cobra.Command) {
+	command.PersistentFlags().BoolVarP(&standAloneFlag, "sign-and-submit", "s", false,
+		`sign and submit transaction. will use source account's seed to sign it
+
+      example: send-payment -s '{"from": "seed", "to": "address", "amount": "42.0"}'
+	           create-account -s '{"source_account":"seed", "new_account":"address", "amount":"1.5"}'`)
 }

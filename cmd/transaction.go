@@ -1,12 +1,15 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
+	"strings"
 
 	"github.com/spf13/cobra"
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/xdr"
 )
 
 var newTransactionCmd = &cobra.Command{
@@ -115,6 +118,20 @@ func (t *txOperations) toMutators() []b.TransactionMutator {
 	}
 
 	return muts
+}
+
+func decodeXDR(base64encoded string) (tx xdr.TransactionEnvelope) {
+
+	rawr := strings.NewReader(base64encoded)
+	b64r := base64.NewDecoder(base64.StdEncoding, rawr)
+
+	_, err := xdr.Unmarshal(b64r, &tx)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return tx
 }
 
 func (t *txOperations) buildTransaction(
