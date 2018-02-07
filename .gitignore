@@ -4,6 +4,7 @@
 *.so
 *.dylib
 issuer*
+issue-*
 distributor*
 foo*
 bar*

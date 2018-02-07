@@ -19,7 +19,19 @@ var submitTransactionCmd = &cobra.Command{
 	Long:  `given a base64 encoded Stellar transaction submit it to the network.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		submitTransactionB64(conf.client, args[0])
+
+		//TODO: fetch the right sequence for composed tx operations
+		//      to get rid of these 4 lines
+		xdr := decodeXDR(args[0])
+		envelope := wrapEnvelope(xdr, nil)
+		envelope.MutateTX(b.AutoSequence{conf.client})
+		encoded, err := envelope.Base64()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		submitTransactionB64(conf.client, encoded)
 	},
 	DisableFlagsInUseLine: true,
 }

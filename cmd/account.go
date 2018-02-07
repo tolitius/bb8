@@ -35,10 +35,19 @@ example: create-account '{"source_account":"seed", "new_account":"address", "amo
 		if err := json.Unmarshal([]byte(args[0]), naccount); err != nil {
 			log.Fatal(err)
 		}
-		tx := naccount.create(conf)
-		submitTransaction(conf.client, tx, naccount.SourceAccountSeed)
+
+		if standAloneFlag {
+			submitStandalone(conf, naccount.SourceAccountSeed, naccount.makeOp())
+		} else {
+			if len(args) == 1 {
+				encoded := makeEnvelope(conf, naccount.SourceAccountSeed, naccount.makeOp())
+				fmt.Print(encoded)
+			} else {
+				encoded := composeWithOps(args[1], naccount.makeOp())
+				fmt.Print(encoded)
+			}
+		}
 	},
-	DisableFlagsInUseLine: true,
 }
 
 func toJSON(foo interface{}) string {
@@ -65,20 +74,13 @@ type newAccount struct {
 	Amount            string
 }
 
-func (c *newAccount) create(conf *config) *b.TransactionBuilder {
+func (c *newAccount) makeOp() (muts []b.TransactionMutator) {
 
-	tx, err := b.Transaction(
-		b.SourceAccount{AddressOrSeed: c.SourceAccountSeed},
-		conf.network,
-		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
+	muts = []b.TransactionMutator{
 		b.CreateAccount(
 			b.Destination{AddressOrSeed: c.NewAccountAddress},
 			b.NativeAmount{Amount: c.Amount},
-		))
+		)}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tx
+	return muts
 }

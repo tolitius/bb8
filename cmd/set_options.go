@@ -10,8 +10,6 @@ import (
 	"github.com/stellar/go/xdr"
 )
 
-var txOptionsFlag string
-
 var setOptionsCmd = &cobra.Command{
 	Use:   "set-options [args]",
 	Short: "set options on the account",
@@ -50,9 +48,22 @@ example: set-options '{"source_account": "seed"
 			log.Fatal(err)
 		}
 
-		tx := opts.buildTransaction(conf)
+		var sourceAccount string
+		if opts.SourceAccount != nil {
+			sourceAccount = string(*opts.SourceAccount)
+		}
 
-		submitTransaction(conf.client, tx, string(*opts.SourceAccount))
+		if standAloneFlag {
+			submitStandalone(conf, sourceAccount, opts.makeOp())
+		} else {
+			if len(args) == 1 {
+				encoded := makeEnvelope(conf, sourceAccount, opts.makeOp())
+				fmt.Print(encoded)
+			} else {
+				encoded := composeWithOps(args[1], opts.makeOp())
+				fmt.Print(encoded)
+			}
+		}
 	},
 }
 
@@ -81,21 +92,14 @@ func (options *setOptions) makeSetOptionsBuilder() b.SetOptionsBuilder {
 	return b.SetOptions(values...)
 }
 
-func (options *setOptions) buildTransaction(conf *config) *b.TransactionBuilder {
+func (options *setOptions) makeOp() (muts []b.TransactionMutator) {
 
 	var optionsBuilder = options.makeSetOptionsBuilder()
 
-	tx, err := b.Transaction(
-		b.SourceAccount{AddressOrSeed: string(*options.SourceAccount)},
-		conf.network,
-		b.AutoSequence{conf.client}, //TODO: pass sequence if provided
-		optionsBuilder)
+	muts = []b.TransactionMutator{
+		optionsBuilder}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tx
+	return muts
 }
 
 // MutateSetOptions for sourceAccount to ignore it
@@ -156,28 +160,4 @@ func parseOptions(options string) b.SetOptionsBuilder {
 	}
 
 	return opts.makeSetOptionsBuilder()
-}
-
-func withOptions(command *cobra.Command) {
-	command.PersistentFlags().StringVarP(&txOptionsFlag, "set-options", "o", "",
-		`set one or more transaction options. this command takes parameters in JSON. supportted options are:
-
-        * inflation_destination
-        * home_domain
-        * master_weight
-        * thresholds
-        * set_flags
-        * remove_flags
-        * add_signer
-        * remove_signer
-
-      example: --set-options '{"home_domain": "stellar.org",
-                               "max_weight": 1,
-                               "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
-
-               --set-options '{"thresholds": {"low": 1, "high": 1},
-                               "set_flags": ["auth_revocable", "auth_required"]}'
-
-               --set-options '{"add_signer": {"address": "GCU2XASMVOOJCUAEPOEL7SHNIRJA3IRSDIE4UTXA4QLJHMB5BFXOLNOB",
-                                              "weight": 3}}'`)
 }

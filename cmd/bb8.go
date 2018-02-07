@@ -46,9 +46,9 @@ func AddCommands() {
 }
 
 func init() {
-	withOptions(sendPaymentCmd)
-
 	withStandAlone(changeTrustCmd)
+	withStandAlone(sendPaymentCmd)
+	withStandAlone(setOptionsCmd)
 }
 
 // Execute adds sub commands to Bb8Cmd and sets all the command line flags

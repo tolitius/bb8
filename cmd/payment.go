@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -18,23 +19,32 @@ example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
          send-payment '{"from": "seed", "to": "address", "token": "BTC", "amount": "42.0", "issuer": "address"}'
 
          notice there is no issuer when sending XLM since it's a native asset.`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(args[0]), payment); err != nil {
 			log.Fatal(err)
 		}
-		tx := payment.send(conf, parseOptions(txOptionsFlag))
-		submitTransaction(conf.client, tx, payment.From)
+
+		if standAloneFlag {
+			submitStandalone(conf, payment.From, payment.makeOp())
+		} else {
+			if len(args) == 1 {
+				encoded := makeEnvelope(conf, payment.From, payment.makeOp())
+				fmt.Print(encoded)
+			} else {
+				encoded := composeWithOps(args[1], payment.makeOp())
+				fmt.Print(encoded)
+			}
+		}
 	},
-	DisableFlagsInUseLine: true,
 }
 
 type tokenPayment struct {
 	From, To, Amount, Token, Issuer, Memo string
 }
 
-func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.TransactionBuilder {
+func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 
 	if t.Token == "" {
 		t.Token = "XLM"
@@ -57,18 +67,10 @@ func (t *tokenPayment) send(conf *config, txOptions b.SetOptionsBuilder) *b.Tran
 		)
 	}
 
-	tx, err := b.Transaction(
+	muts = []b.TransactionMutator{
 		b.SourceAccount{t.From},
-		conf.network,
-		b.AutoSequence{conf.client},
 		payment,
-		memo,
-		txOptions,
-	)
+		memo}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return tx
+	return muts
 }
