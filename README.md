@@ -34,6 +34,8 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Master Weight](#master-weight)
   - [Add and Remove Signers](#add-and-remove-signers)
 - [Composing Transaction Operations](#composing-transaction-operations)
+  - [Issue Token and Set Options](#issue-token-and-set-options)
+  - [Decoding Base64 XDR](#decoding-base64-xdr)
 - [Stream Stellar Events](#stream-stellar-events)
 - [Help](#help)
 - [License](#license)
@@ -201,7 +203,7 @@ Use "bb [command] --help" for more information about a command.
 
 Commands that create transaction operations (create-account, change-trust, send-payment, set-options, etc.) are by default _composable_, which means the output of one command may be piped as an input to another. In order to run them stand alone there is an `-s`/`--sign-and-submit` flag which will be used in most of the examples below to run commands individually.
 
-The "[Composing Transaction Operations](#composing-transaction-operations)" section talks about composing commands together along with signing and submitting transactions.
+The "[Composing Transaction Operations](#composing-transaction-operations)" section talks about composing commands together and piping composed transactions to `sign` and `submit` commands.
 
 ## Create Account Keys
 
@@ -731,6 +733,145 @@ $ bb set-options -s '{"source_account": "'$(cat foo)'",
                       "remove_signer": {"address": "'$(cat bar.pub)'"}}'
 ```
 
+## Composing Transaction Operations
+
+A single Stellar transaction consists of an arbitrary list of [operations](https://www.stellar.org/developers/guides/concepts/operations.html). Transactions are ACID: when one transaction is sumbitted all its operations are executed in order and atomically: either all of them are applied or none.
+
+There is a [limit](https://github.com/stellar/go/blob/333387f23a0f205a3c00bdc33cb454e0fda32095/xdr/xdr_generated.go#L2680) on how many of these operations can be included.
+
+Composition is a great way to support building a single Stellar with multiple operations. Since BB-8 is a command line interface, it relies on command line composition tools such as [pipline](https://en.wikipedia.org/wiki/Pipeline_(Unix)) and [xargs](https://en.wikipedia.org/wiki/Xargs):
+
+```sh
+$ command | xargs command | xargs command ...
+```
+
+BB-8 commands are composable by default, in fact to make them not composable and to process them individually there is a separate `-s/--sign-and-submit` flag which is used in the examples above.
+
+Once all the operations are composed a Stellar transaction needs to be signed and submitted. This is done with piping commands to `sign` and `submit` commands:
+
+```sh
+$ bb command | xargs \
+  bb command | xargs \
+  bb command | xargs \
+  ...
+  bb sign '[seed1, seed2..]' | xargs \
+  bb submit
+```
+
+### Issue Token and Set Options
+
+Let's issue a composition token `COMP` by composing "change-trust", "set-options", "sign" and "submit" commands:
+
+```sh
+$ bb change-trust '{"source_account": "'$(cat distributor)'",
+                    "code": "COMP",
+                    "issuer_address": "'$(cat issuer.pub)'"}' | xargs \
+  bb set-options  '{"home_domain": "dotkam.com",
+                    "max_weight": 1}' | xargs \
+  bb sign '["'$(cat distributor)'"]' | xargs \
+  bb submit
+```
+
+### Decoding Base64 XDR
+
+If transaction command chain does not end with "submit", it would return a base64 encoded transaction:
+
+```sh
+$ bb change-trust '{"source_account": "'$(cat distributor)'",
+                    "code": "CMP",
+                    "issuer_address": "'$(cat issuer.pub)'"}' | xargs \
+  bb set-options  '{"home_domain": "dotkam.com",
+                    "max_weight": 1}' | xargs \
+  bb sign '["'$(cat distributor)'"]'
+```
+```
+AAAAAG7sk5IccafeFhmT8BMrJHqIIVwvR0Tf1FQIaQoiihO9AAAAyABtjagAAAAQAAAAAAAAAAAAAAACAAAAAAAAAAYAAAABQ01QAAAAAACmTMqnWvpmw3VsrJZTdtuGwNp3CM6i4nQIX5YWWB9hdX//////////AAAAAAAAAAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAApkb3RrYW0uY29tAAAAAAAAAAAAAAAAAAEiihO9AAAAQIXduMIFMEZY+dEg+zpwle0vO+nxRsDTPtrIfret2i1nw9WAZlS4qtUtIKhWmmRTnr5/598oVUd4rqiKpvNYtgQ=
+```
+
+BB-8 has a `decode` command that decodes this into a readable [XDR](https://www.stellar.org/developers/horizon/reference/xdr.html):
+
+```sh
+$ bb change-trust '{"source_account": "'$(cat distributor)'",
+                    "code": "COMP",
+                    "issuer_address": "'$(cat issuer.pub)'"}' | xargs \
+  bb set-options  '{"home_domain": "dotkam.com",
+                    "max_weight": 1}' | xargs \
+  bb sign '["'$(cat distributor)'"]' | xargs \
+  bb decode
+```
+```xdr
+{
+  "Tx": {
+    "SourceAccount": ...,
+    "Fee": 200,
+    "SeqNum": 30836525155483664,
+    "Operations": [
+      {
+        "Body": {
+          "Type": 6,
+          "ChangeTrustOp": {
+            "Line": {
+              "AlphaNum4": {
+                "AssetCode": "COMP",
+                "Issuer": ...
+              },
+            },
+            "Limit": 9223372036854775807
+          },
+        }
+      },
+      {
+        "Body": {
+          "Type": 5,
+          "SetOptionsOp": {
+            ...
+            "HomeDomain": "dotkam.com"
+          },
+        }
+      }
+    ],
+  },
+  "Signatures": [
+    {
+      "Hint": ...,
+      "Signature": "hd24wgUwRlj50SD7OnCV7S876fFGwNM+2sh+t63aLWfD1YBmVLiq1S0gqFaaZFOevn/n3yhVR3iuqIqm81i2BA=="
+    }
+  ]
+}
+```
+
+notice `ChangeTrustOp` and `SetOptionsOp`.
+
+"decode" command is useful for looking at single commands as well:
+
+```sh
+$ bb send-payment '{"from": "'$(cat issuer)'",
+                    "to": "'$(cat distributor.pub)'",
+                    "amount": "42.0",
+                    "memo": "forty two"}' | xargs bb decode
+```
+```xdr
+...
+    "Memo": {
+      "Type": 1,
+      "Text": "forty two",
+      "Id": null,
+      "Hash": null,
+      "RetHash": null
+    },
+    "Operations": [
+      {
+          "PaymentOp": {
+            "Destination": ...,
+            "Asset": {
+              "Type": 0,
+              "AlphaNum4": null,
+              "AlphaNum12": null
+            },
+            "Amount": 420000000
+          },
+...
+```
 ## Stream Stellar Events
 
 BB-8 has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:
