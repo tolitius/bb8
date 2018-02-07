@@ -33,6 +33,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Thresholds](#thresholds)
   - [Master Weight](#master-weight)
   - [Add and Remove Signers](#add-and-remove-signers)
+- [Composing Transaction Operations](#composing-transaction-operations)
 - [Stream Stellar Events](#stream-stellar-events)
 - [Help](#help)
 - [License](#license)
@@ -67,7 +68,19 @@ $ bb load-account GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
 }
 ```
 
-to rollups and runtime stats:
+to transaction operation composition:
+
+```sh
+$ bb change-trust '{"source_account": "seed",
+                    "code": "YUM",
+                    "issuer_address": "address"}' | xargs \
+  bb set-options  '{"home_domain": "stellar.org",
+                    "max_weight": 1}' | xargs \
+  bb sign '["seed"]' | xargs \
+  bb submit
+```
+
+and runtime rollups:
 
 ```sh
 $ bb stream --transactions GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
@@ -168,15 +181,16 @@ Usage:
 Available Commands:
   change-trust   create, update, or delete a trustline
   create-account creates a new account
+  decode         decodes a base64 encoded transaction
   fund           fund a test account
   gen-keys       create a pair of keys (in two files "file-name.pub" and "file-name")
   help           Help about any command
   load-account   load and return account details
-  new-tx         build and submit a new transaction
   send-payment   send payment from one account to another
   set-options    set options on the account
+  sign           sign a base64 encoded transaction
   stream         stream "ledger", "payment" and "tranasaction" events
-  submit-tx      submit a base64 encoded transaction
+  submit         submit a base64 encoded transaction
   version        print the version number of bb
 
 Flags:
@@ -184,6 +198,10 @@ Flags:
 
 Use "bb [command] --help" for more information about a command.
 ```
+
+Commands that create transaction operations (create-account, change-trust, send-payment, set-options, etc.) are by default _composable_, which means the output of one command may be piped as an input to another. In order to run them stand alone there is an `-s`/`--sign-and-submit` flag which will be used in most of the examples below to run commands individually.
+
+The "[Composing Transaction Operations](#composing-transaction-operations)" section talks about composing commands together along with signing and submitting transactions.
 
 ## Create Account Keys
 
@@ -245,7 +263,7 @@ At this moment this new account "bar" does _not yet exist_ on the Stellar ledger
 Since account "foo" was funded lumens in the step above it could be used as a source account to create "bar":
 
 ```sh
-$ bb create-account '{"source_account":"'$(cat foo)'", "new_account":"'$(cat bar.pub)'", "amount":"1.5"}'
+$ bb create-account -s '{"source_account":"'$(cat foo)'", "new_account":"'$(cat bar.pub)'", "amount":"1.5"}'
 ```
 
 this would create a new "bar" account by sending 1.5 XLM to it from an account "foo".
@@ -356,7 +374,7 @@ In this example we would assume no accounts exist so we'll generate issuer and d
 $ bb gen-keys issuer
 2018/01/30 15:42:48 keys are created and stored in: issuer.pub and issuer
 
-$ bb --gen-keys distributor
+$ bb gen-keys distributor
 2018/01/30 15:42:52 keys are created and stored in: distributor.pub and distributor
 ```
 
@@ -396,9 +414,9 @@ Now we are ready to issue a new token, let's call it `YUM`.
 In order to do that we'd use a `change-trust` command to setup a trustline between the distribution account and the issuer:
 
 ``` sh
-$ bb change-trust '{"source_account": "'$(cat distributor)'",
-                    "code": "YUM",
-                    "issuer_address": "'$(cat issuer.pub)'"}'
+$ bb change-trust -s '{"source_account": "'$(cat distributor)'",
+                       "code": "YUM",
+                       "issuer_address": "'$(cat issuer.pub)'"}'
 ```
 
 `change-trust` does several things:
@@ -437,10 +455,10 @@ Setting up a trustline is done via a "[Change Trust](https://www.stellar.org/dev
 The `change-trust` command takes an optional `limit` parameter to set such a cap. For example let's set a cap of `42` YUMs for the distribution account:
 
 ``` sh
-$ bb change-trust '{"source_account": "'$(cat distributor)'",
-                    "code": "YUM",
-                    "issuer_address": "'$(cat issuer.pub)'",
-                    "limit": "42.0"}'
+$ bb change-trust -s '{"source_account": "'$(cat distributor)'",
+                       "code": "YUM",
+                       "issuer_address": "'$(cat issuer.pub)'",
+                       "limit": "42.0"}'
 ```
 
 ```sh
@@ -485,11 +503,11 @@ To continue the [issuing a new token](#issuing-a-new-token) example, we'll send 
 BB-8 has a `send-payment` command that is capable of sending XLM as well as any other token, in this case YUM:
 
 ```sh
-$ bb send-payment '{"from": "'$(cat issuer)'",
-                    "to": "'$(cat distributor.pub)'",
-                    "token": "YUM",
-                    "amount": "42.0",
-                    "issuer": "'$(cat issuer.pub)'"}'
+$ bb send-payment -s '{"from": "'$(cat issuer)'",
+                       "to": "'$(cat distributor.pub)'",
+                       "token": "YUM",
+                       "amount": "42.0",
+                       "issuer": "'$(cat issuer.pub)'"}'
 
 2018/01/30 16:11:56 sending 42.0 YUM from GBW2U2GEWVD7GDTQPPJSDGE4SRYXN3USYZKNNI6EPVHUHROS47S6NUZJ to GDPKQGOY33DYUPC3PXX222FRZOLQD4L6CMXGJV5I4W2GB4UOT4MCJCO5
 ```
@@ -532,9 +550,9 @@ In order to send XLM (a.k.a. lumens) from one account to another `send-payment` 
 Since we funded the issuer account with XLMs in the example above, we'll use it as a source account, but of course any account that has lumens can be used instead:
 
 ```sh
-$ bb send-payment '{"from": "'$(cat issuer)'",
-                    "to": "'$(cat distributor.pub)'",
-                    "amount": "42.0"}'
+$ bb send-payment -s '{"from": "'$(cat issuer)'",
+                       "to": "'$(cat distributor.pub)'",
+                       "amount": "42.0"}'
 
 2018/01/30 16:12:19 sending 42.0 XLM from GDK5BSGYV2XFMO6H7OFTZDLJ2LFXTGMZLC4267OJQ4EASOFDBCELGBOA to GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F
 ```
@@ -568,10 +586,10 @@ For example if you are a bank that is receiving or sending payments on behalf of
 In order to include memo into a payment transaction add a `"memo"` key to `send-payment` arguments:
 
 ```sh
-$ bb send-payment '{"from": "'$(cat issuer)'",
-                    "to": "'$(cat distributor.pub)'",
-                    "amount": "42.0",
-                    "memo": "forty two"}'
+$ bb send-payment -s '{"from": "'$(cat issuer)'",
+                       "to": "'$(cat distributor.pub)'",
+                       "amount": "42.0",
+                       "memo": "forty two"}'
 ```
 
 
@@ -594,8 +612,8 @@ In order to discover information about a particular token Stellar would look at 
 Since we issued a brand new `YUM` token, we can create a "`stellar.toml`" file to describe it make it reachable at "`https://home-domain/.well-known/stellar.toml`", and let Stellar know to look for it there by setting a "home domain" transaction option on the issuer's account with the `set-options` command:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat issuer)'",
-                   "home_domain": "dotkam.com"}'
+$ bb set-options -s '{"source_account": "'$(cat issuer)'",
+                      "home_domain": "dotkam.com"}'
 ```
 
 and now the issuer account is linked to its home domain where Stellar can find more details about it:
@@ -613,15 +631,15 @@ Another example of using Stellar transaction options would be setting an inflati
 Inflation destination can be set via `set-options`. For example let's set an inflation destination on the distribution account from the examples above:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat distributor)'",
-                   "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
+$ bb set-options -s '{"source_account": "'$(cat distributor)'",
+                      "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 ```
 
 We can combine other options, let's add a home domain as well:
 ```sh
-$ bb set-options '{"source_account": "'$(cat issuer)'",
-                   "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT",
-                   "home_domain": "dotkam.com"}'
+$ bb set-options -s '{"source_account": "'$(cat issuer)'",
+                      "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT",
+                      "home_domain": "dotkam.com"}'
 ```
 
 and we can check that both options were set successfully:
@@ -648,26 +666,26 @@ There are 3 different flags that can be set on the account that are set on issue
 These flags can be set or cleared with `"set_flags"` and `"clear_flags"` transaction options. Here are some examples:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "set_flags": ["auth_revocable", "auth_required"]}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "set_flags": ["auth_revocable", "auth_required"]}'
 ```
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "clear_flags": ["auth_immutable", "auth_required"]}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "clear_flags": ["auth_immutable", "auth_required"]}'
 ```
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "set_flags": ["auth_revocable"],
-                   "clear_flags": ["auth_required"]}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "set_flags": ["auth_revocable"],
+                      "clear_flags": ["auth_required"]}'
 ```
 
 BB-8 would validate these flags and will let you know when they are invalid:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "set_flags": ["auth_revocable", "auth_immu"]}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "set_flags": ["auth_revocable", "auth_immu"]}'
 ```
 ```
 >> unknown flag to set: "auth_immu". possible flag values: [auth_required auth_revocable auth_immutable]
@@ -680,8 +698,8 @@ Transaction operations fall under a specific threshold category: _low_, _medium_
 Threshold could be set with `set-options` via a `thresholds` map:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "thresholds": {"low": 42, "high": 3}}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "thresholds": {"low": 42, "high": 3}}'
 ```
 
 ### Master Weight
@@ -689,8 +707,8 @@ $ bb set-options '{"source_account": "'$(cat foo)'",
 A master key weight can be changed with a `"master_weight"` option:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "master_weight": 42}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "master_weight": 42}'
 ```
 
 Note that:
@@ -702,15 +720,15 @@ Note that:
 If a transaction is composed out of [operations on multiple accounts](https://www.stellar.org/developers/guides/concepts/operations.html#transactions-involving-multiple-accounts) it would need signatures of all these accounts. Signer could be added or later removed with `"add_signer"` and `"remove_signer"` options:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "add_signer": {"address": "'$(cat bar.pub)'", "weight": 3}}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "add_signer": {"address": "'$(cat bar.pub)'", "weight": 3}}'
 ```
 
 notice the `"weight"` option, it could later be changed. Setting it to `0` would remove a signer, or it can be removed with the `"remove_signer"` option:
 
 ```sh
-$ bb set-options '{"source_account": "'$(cat foo)'",
-                   "remove_signer": {"address": "'$(cat bar.pub)'"}}'
+$ bb set-options -s '{"source_account": "'$(cat foo)'",
+                      "remove_signer": {"address": "'$(cat bar.pub)'"}}'
 ```
 
 ## Stream Stellar Events
@@ -805,6 +823,7 @@ For example here is how to get more details about the `send-payment` command:
 
 ```sh
 $ bb send-payment --help
+
 send payment of any asset from one account to another. this command takes parameters in JSON.
 
 example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
@@ -814,12 +833,14 @@ example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
          notice there is no issuer when sending XLM since it's a native asset.
 
 Usage:
-  bb send-payment [args]
+  bb send-payment [args] [flags]
 
 Flags:
-  -h, --help                 help for send-payment
-  -o, --set-options string   set one or more transaction options. this command takes parameters in JSON. supportted options are:
-  ...
+  -h, --help              help for send-payment
+  -s, --sign-and-submit   sign and submit transaction. will use source account's seed to sign it
+
+      example: send-payment -s '{"from": "seed", "to": "address", "amount": "42.0"}'
+               create-account -s '{"source_account":"seed", "new_account":"address", "amount":"1.5"}'
 ```
 
 here is more about `set-options` command:
@@ -858,7 +879,11 @@ Usage:
   bb set-options [args] [flags]
 
 Flags:
-  -h, --help   help for set-options
+  -h, --help              help for set-options
+  -s, --sign-and-submit   sign and submit transaction. will use source account's seed to sign it
+
+      example: send-payment -s '{"from": "seed", "to": "address", "amount": "42.0"}'
+               create-account -s '{"source_account":"seed", "new_account":"address", "amount":"1.5"}'
 ```
 
 and so on. This kind of help is available for all the commands. Feel free to submit an issue in case it is missing, or more details about the command, option, flag would be helpful.
