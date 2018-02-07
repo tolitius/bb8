@@ -735,7 +735,7 @@ $ bb set-options -s '{"source_account": "'$(cat foo)'",
 
 ## Composing Transaction Operations
 
-A single Stellar transaction consists of an arbitrary list of [operations](https://www.stellar.org/developers/guides/concepts/operations.html). Transactions are ACID: when one transaction is sumbitted all its operations are executed in order and atomically: either all of them are applied or none.
+A single Stellar transaction consists of an arbitrary list of [operations](https://www.stellar.org/developers/guides/concepts/operations.html). Transactions are ACID: when one transaction is submitted all its operations are executed in order and atomically: either all of them are applied or none.
 
 There is a [limit](https://github.com/stellar/go/blob/333387f23a0f205a3c00bdc33cb454e0fda32095/xdr/xdr_generated.go#L2680) on how many of these operations can be included.
 
