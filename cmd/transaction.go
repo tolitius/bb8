@@ -180,3 +180,44 @@ func wrapEnvelope(envelope *xdr.TransactionEnvelope, muts []b.TransactionMutator
 
 	return &txe
 }
+
+func submitStandalone(conf *config, sourceAccount string, muts []b.TransactionMutator) int32 {
+
+	header := txHeader{sourceAccount: sourceAccount}.
+		newTx(conf)
+
+	ops := append(header, muts...)
+
+	envelope := makeTransactionEnvelope(ops)
+	signEnvelope(envelope, sourceAccount)
+
+	return submitEnvelope(envelope, conf.client)
+}
+
+func makeEnvelope(conf *config, sourceAccount string, muts []b.TransactionMutator) string {
+
+	header := txHeader{sourceAccount: sourceAccount}.
+		newTx(conf)
+
+	ops := append(header, muts...)
+	envelope := makeTransactionEnvelope(ops)
+	encoded, err := envelope.Base64()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return encoded
+}
+
+func composeWithOps(xdr string, muts []b.TransactionMutator) string {
+	parent := decodeXDR(xdr)
+	envelope := wrapEnvelope(parent, muts)
+	encoded, err := envelope.Base64()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return encoded
+}

@@ -25,39 +25,13 @@ example: change-trust '{"source_account": "seed", "code": "XYZ", "issuer_address
 		}
 
 		if standAloneFlag {
-			header := txHeader{sourceAccount: ct.SourceAccount}.
-				newTx(conf)
-
-			ops := append(header, ct.makeOp()...)
-
-			envelope := makeTransactionEnvelope(ops)
-			signEnvelope(envelope, ct.SourceAccount)
-			submitEnvelope(envelope, conf.client)
+			submitStandalone(conf, ct.SourceAccount, ct.makeOp())
 		} else {
 			if len(args) == 1 {
-
-				header := txHeader{sourceAccount: ct.SourceAccount}.
-					newTx(conf)
-
-				ops := append(header, ct.makeOp()...)
-				envelope := makeTransactionEnvelope(ops)
-				encoded, err := envelope.Base64()
-
-				if err != nil {
-					log.Fatal(err)
-				}
-
+				encoded := makeEnvelope(conf, ct.SourceAccount, ct.makeOp())
 				fmt.Print(encoded)
-
 			} else {
-				parent := decodeXDR(args[1])
-				envelope := wrapEnvelope(parent, ct.makeOp())
-				encoded, err := envelope.Base64()
-
-				if err != nil {
-					log.Fatal(err)
-				}
-
+				encoded := composeWithOps(args[1], ct.makeOp())
 				fmt.Print(encoded)
 			}
 		}
