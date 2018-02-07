@@ -38,6 +38,7 @@ var signTransactionCmd = &cobra.Command{
 
 		xdr := decodeXDR(args[1])
 		envelope := wrapEnvelope(xdr, nil)
+		envelope.MutateTX(conf.network)
 
 		signEnvelope(envelope, signers...)
 		encoded, err := envelope.Base64()
@@ -145,9 +146,13 @@ func makeTransactionEnvelope(muts []b.TransactionMutator) *b.TransactionEnvelope
 }
 
 func signEnvelope(envelope *b.TransactionEnvelopeBuilder, seeds ...string) {
+
 	for _, seed := range seeds {
 		signer := b.Sign{Seed: seed}
-		signer.MutateTransactionEnvelope(envelope)
+		err := signer.MutateTransactionEnvelope(envelope)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
