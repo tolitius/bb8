@@ -741,7 +741,7 @@ A single Stellar transaction consists of an arbitrary list of [operations](https
 
 There is a [limit](https://github.com/stellar/go/blob/333387f23a0f205a3c00bdc33cb454e0fda32095/xdr/xdr_generated.go#L2680) on how many of these operations can be included.
 
-Composition is a great way to support building a single Stellar with multiple operations. Since BB-8 is a command line interface, it relies on command line composition tools such as [pipline](https://en.wikipedia.org/wiki/Pipeline_(Unix)) and [xargs](https://en.wikipedia.org/wiki/Xargs):
+Composition is a great way to support building a single Stellar transaction with multiple operations. Since BB-8 is a command line interface, it relies on command line composition tools such as [pipline](https://en.wikipedia.org/wiki/Pipeline_(Unix)) and [xargs](https://en.wikipedia.org/wiki/Xargs):
 
 ```sh
 $ command | xargs command | xargs command ...
