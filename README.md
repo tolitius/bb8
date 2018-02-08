@@ -1,5 +1,7 @@
 # Beebee Ate
 
+<img src="doc/img/stellar-bb8-logo.png" width="150px">
+
 [![Build
 Status](https://travis-ci.org/tolitius/bb8.svg?branch=master)](https://travis-ci.org/tolitius/bb8)
 
