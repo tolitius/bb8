@@ -10,6 +10,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 - [Why](#why)
 - [Installation](#installation)
   - [Homebrew](#homebrew)
+    - [Updating to the latest release](#updating-to-the-latest-release)
   - [Download, Unpack, Go](#download-unpack-go)
   - [Or just Go](#or-just-go)
 - [Choose Stellar Network](#choose-stellar-network)
@@ -124,6 +125,13 @@ and BB-8 is ready to rock:
 
 ```sh
 $ bb --help
+```
+
+#### Updating to the latest release
+
+```sh
+$ brew update
+$ brew upgrade bb8
 ```
 
 ### Download, Unpack, Go
@@ -890,7 +898,7 @@ Keys are string that are up to 64 bytes long and values (a.k.a. names) are bytes
 `BB-8` has a `manage-data` command that creates a "Manage Data" transaction operation:
 
 ```sh
-$ bb manage-data -s '{"source_account": "SBGYJ...7RU3NE",
+$ bb manage-data -s '{"source_account": "'$(cat seed)'",
                       "name": "answer to the ultimate question",
                       "value": "42"}'
 ```
@@ -900,8 +908,8 @@ $ bb manage-data -s '{"source_account": "SBGYJ...7RU3NE",
 Let's look at the transaction it creates:
 
 ```sh
-$ bb manage-data '{"source_account": "SBGYJ...7RU3NE",
-                   "name": "auqlue",
+$ bb manage-data '{"source_account": "'$(cat seed)'",
+                   "name": "answer to the ultimate question",
                    "value": "42"}' | xargs \
   bb decode
 ```
@@ -917,7 +925,7 @@ $ bb manage-data '{"source_account": "SBGYJ...7RU3NE",
          {
             ...
        "ManageDataOp":{
-               "DataName":"auqlue",
+               "DataName":"answer to the ultimate question",
                "DataValue":"NDI="
        ...}}]}}
 ```
