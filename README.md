@@ -38,6 +38,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 - [Composing Transaction Operations](#composing-transaction-operations)
   - [Issue Token and Set Options](#issue-token-and-set-options)
   - [Decoding Base64 XDR](#decoding-base64-xdr)
+- [Manage Data](#manage-data)
 - [Stream Stellar Events](#stream-stellar-events)
 - [Help](#help)
 - [License](#license)
@@ -190,6 +191,7 @@ Available Commands:
   gen-keys       create a pair of keys (in two files "file-name.pub" and "file-name")
   help           Help about any command
   load-account   load and return account details
+  manage-data    set, modify or delete a Data Entry (name/value pair)
   send-payment   send payment from one account to another
   set-options    set options on the account
   sign           sign a base64 encoded transaction
@@ -874,6 +876,54 @@ $ bb send-payment '{"from": "'$(cat issuer)'",
           },
 ...
 ```
+
+## Manage Data
+
+One of the most underrated transaction operation is [Manage Data](https://www.stellar.org/developers/guides/concepts/list-of-operations.html#manage-data).
+
+As documentation suggests it allows you to set, modify or delete a Data Entry (name/value pair) that is attached to a particular account. An account can have an arbitrary amount of DataEntries attached to it. Each DataEntry increases the minimum balance needed to be held by the account.
+
+DataEntries can be used for application specific things. They are not used by the core Stellar protocol.
+
+Keys are string that are up to 64 bytes long and values (a.k.a. names) are bytes that are 64 bytes long.
+
+`BB-8` has a `manage-data` command that creates a "Manage Data" transaction operation:
+
+```sh
+$ bb manage-data -s '{"source_account": "SBGYJ...7RU3NE",
+                      "name": "answer to the ultimate question",
+                      "value": "42"}'
+```
+
+<img src="doc/img/manage-data-op.png">
+
+Let's look at the transaction it creates:
+
+```sh
+$ bb manage-data '{"source_account": "SBGYJ...7RU3NE",
+                   "name": "auqlue",
+                   "value": "42"}' | xargs \
+  bb decode
+```
+
+```json
+{
+   "Tx":{
+      "SourceAccount":"GBDGNI...WOG6",
+      "Fee":100,
+      "SeqNum":30915131646935045,
+      ...
+    "Operations":[
+         {
+            ...
+       "ManageDataOp":{
+               "DataName":"auqlue",
+               "DataValue":"NDI="
+       ...}}]}}
+```
+
+`DataValue` was converted to bytes, but no worries, it is still `42`.
+
 ## Stream Stellar Events
 
 BB-8 has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:

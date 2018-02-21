@@ -39,6 +39,7 @@ func AddCommands() {
 	Bb8Cmd.AddCommand(sendPaymentCmd)
 	Bb8Cmd.AddCommand(streamCmd)
 	Bb8Cmd.AddCommand(createAccountCmd)
+	Bb8Cmd.AddCommand(manageDataCmd)
 	Bb8Cmd.AddCommand(setOptionsCmd)
 	Bb8Cmd.AddCommand(decodeCmd)
 	Bb8Cmd.AddCommand(signTransactionCmd)
@@ -49,6 +50,7 @@ func init() {
 	withStandAlone(changeTrustCmd)
 	withStandAlone(sendPaymentCmd)
 	withStandAlone(setOptionsCmd)
+	withStandAlone(manageDataCmd)
 }
 
 // Execute adds sub commands to Bb8Cmd and sets all the command line flags
