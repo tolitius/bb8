@@ -155,7 +155,7 @@ $ ./bb --help  ##  or "bb.exe --help" on Windows
 If you have Golang installed, you could simply:
 
 ```sh
-$ go get github.com/tolitius/bb8
+$ go get -u github.com/tolitius/bb8
 ```
 
 a runnable `bb` will be under `$GOBIN`:
