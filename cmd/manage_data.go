@@ -54,7 +54,7 @@ func (md *manageData) makeOp() (muts []b.TransactionMutator) {
 	// source := seedToPair(md.SourceAccount)
 
 	muts = []b.TransactionMutator{
-		b.SourceAccount{AddressOrSeed: md.SourceAccount},
+		b.SourceAccount{AddressOrSeed: resolveAddress(md.SourceAccount)},
 		b.SetData(md.Name, []byte(md.Value))}
 
 	return muts

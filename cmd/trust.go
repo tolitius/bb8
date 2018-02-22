@@ -21,7 +21,7 @@ example: change-trust '{"source_account": "seed", "code": "XYZ", "issuer_address
 
 		ct := &changeTrust{}
 		if err := json.Unmarshal([]byte(args[0]), ct); err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not parse change trust transaction JSON data: %v", err)
 		}
 
 		if standAloneFlag {
@@ -54,7 +54,7 @@ func (ct *changeTrust) makeOp() (muts []b.TransactionMutator) {
 	}
 
 	muts = []b.TransactionMutator{
-		b.SourceAccount{AddressOrSeed: ct.SourceAccount},
+		b.SourceAccount{AddressOrSeed: resolveAddress(ct.SourceAccount)},
 		b.Trust(ct.Code, ct.IssuerAddress, limit)}
 
 	return muts

@@ -23,7 +23,7 @@ example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
 	Run: func(cmd *cobra.Command, args []string) {
 		payment := &tokenPayment{}
 		if err := json.Unmarshal([]byte(args[0]), payment); err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not parse transaction JSON data: %v", err)
 		}
 
 		if standAloneFlag {
@@ -50,7 +50,13 @@ func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 		t.Token = "XLM"
 	}
 
-	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(t.From).Address(), t.To)
+	from := resolveAddress(t.From)
+
+	if from == "" {
+		log.Fatalf("can't send payment, missing a source (a.k.a. account address/seed)")
+	}
+
+	log.Printf("sending %s %s from %s to %s", t.Amount, t.Token, seedToPair(from).Address(), t.To)
 
 	var payment b.PaymentBuilder
 	var memo = b.MemoText{Value: t.Memo}
@@ -68,7 +74,7 @@ func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 	}
 
 	muts = []b.TransactionMutator{
-		b.SourceAccount{t.From},
+		b.SourceAccount{from},
 		payment,
 		memo}
 

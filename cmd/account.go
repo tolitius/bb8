@@ -50,14 +50,6 @@ example: create-account '{"source_account":"seed", "new_account":"address", "amo
 	},
 }
 
-func toJSON(foo interface{}) string {
-	b, err := json.MarshalIndent(foo, "", "  ")
-	if err != nil {
-		log.Fatal("error:", err)
-	}
-	return string(b)
-}
-
 func loadAccount(stellar *horizon.Client, address string) horizon.Account {
 
 	account, err := stellar.LoadAccount(address)

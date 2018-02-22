@@ -78,13 +78,6 @@ func seedToPair(seed string) keypair.KP {
 	return kp
 }
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
 func readConfig(cpath string) *config {
 
 	/*TODO: add custom network support

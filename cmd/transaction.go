@@ -4,13 +4,20 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strings"
 
 	"github.com/spf13/cobra"
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/keypair"
 	"github.com/stellar/go/xdr"
+)
+
+const (
+	accountAddressEnv = "STELLAR_ACCOUNT_ADDRESS"
+	accountSeedEnv    = "STELLAR_ACCOUNT_SEED"
 )
 
 var submitTransactionCmd = &cobra.Command{
@@ -40,15 +47,27 @@ var signTransactionCmd = &cobra.Command{
 	Use:   "sign [signers, base64-encoded-transaction]",
 	Short: "sign a base64 encoded transaction",
 	Long:  `given a set of signers (seeds) and a base64 encoded Stellar transaction sign it with all the signers and encode it back to base64.`,
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var signers []string
-		if err := json.Unmarshal([]byte(args[0]), &signers); err != nil {
-			log.Fatal(err)
+		var xdrRaw string
+
+		if len(args) == 1 { // signers are not provided
+			xdrRaw = args[0]
+			seed, err := resolveSeed("") // resolve the default seed
+			if err != nil {
+				log.Fatalf("could not sign the transaction because seeds are not explicitely provided, and the default seed is not set")
+			}
+			signers = []string{seed}
+		} else {
+			xdrRaw = args[1]
+			if err := json.Unmarshal([]byte(args[0]), &signers); err != nil {
+				log.Fatal(err)
+			}
 		}
 
-		xdr := decodeXDR(args[1])
+		xdr := decodeXDR(xdrRaw)
 		envelope := wrapEnvelope(xdr, nil)
 		envelope.MutateTX(conf.network)
 
@@ -161,9 +180,13 @@ func signEnvelope(envelope *b.TransactionEnvelopeBuilder, seeds ...string) {
 
 	for _, seed := range seeds {
 		signer := b.Sign{Seed: seed}
-		err := signer.MutateTransactionEnvelope(envelope)
+		err := validateSeed(seed)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("could not sign the transaction. seed is invalid: %v", err)
+		}
+		err = signer.MutateTransactionEnvelope(envelope)
+		if err != nil {
+			log.Fatalf("could not sign the transaction, make sure the seed(s) is provided: %v", err)
 		}
 	}
 }
@@ -195,20 +218,26 @@ func wrapEnvelope(envelope *xdr.TransactionEnvelope, muts []b.TransactionMutator
 
 func submitStandalone(conf *config, sourceAccount string, muts []b.TransactionMutator) int32 {
 
-	header := txHeader{sourceAccount: sourceAccount}.
+	seed, err := resolveSeed(sourceAccount)
+
+	if err != nil {
+		log.Fatalf("could not submit transaction: %v", err)
+	}
+
+	header := txHeader{sourceAccount: seed}.
 		newTx(conf)
 
 	ops := append(header, muts...)
 
 	envelope := makeTransactionEnvelope(ops)
-	signEnvelope(envelope, sourceAccount)
+	signEnvelope(envelope, seed)
 
 	return submitEnvelope(envelope, conf.client)
 }
 
 func makeEnvelope(conf *config, sourceAccount string, muts []b.TransactionMutator) string {
 
-	header := txHeader{sourceAccount: sourceAccount}.
+	header := txHeader{sourceAccount: resolveAddress(sourceAccount)}.
 		newTx(conf)
 
 	ops := append(header, muts...)
@@ -232,4 +261,70 @@ func composeWithOps(xdr string, muts []b.TransactionMutator) string {
 	}
 
 	return encoded
+}
+
+func resolveAddress(address string) string {
+
+	if address != "" {
+		return address
+	}
+
+	account := getEnv(accountAddressEnv, "")
+
+	if account == "" {
+		log.Fatalf("can't resolve Stellar account address (a.k.a. source account). you can set it via %s environment variable or provide it as a \"%s\" field of the transaction", accountAddressEnv, "source_account")
+	}
+
+	return account
+}
+
+func resolveSeed(seed string) (string, error) {
+
+	if seed != "" {
+		return seed, nil
+	}
+
+	seedFile := getEnv(accountSeedEnv, "")
+
+	if seedFile == "" {
+		return "", fmt.Errorf("can't find the account seed. you can either provide it explicitely in the transaction or set \"%v\" environment variable that points to a file with a seed", accountSeedEnv)
+	}
+
+	seedBytes, err := ioutil.ReadFile(seedFile)
+
+	if err != nil {
+		return "", fmt.Errorf("could not read %v seed file due to %v", seedFile, err)
+	}
+
+	resolvedSeed := string(seedBytes)
+
+	err = validateSeed(resolvedSeed)
+
+	if err != nil {
+		return "", fmt.Errorf("read a seed from %v file, but it does not appear to be a valid seed: %v", seedFile, err)
+	}
+
+	return resolvedSeed, nil
+}
+
+func validateSeed(seed string) error {
+
+	if seed == "" {
+		return fmt.Errorf("the account seed (private key) is empty")
+	}
+
+	kp, err := keypair.Parse(seed)
+
+	if err != nil {
+		return fmt.Errorf("could not parse an account seed: %v", err)
+	}
+
+	switch v := kp.(type) {
+	default:
+		return fmt.Errorf("unexpected account seed type: %T", v)
+	case *keypair.FromAddress:
+		return fmt.Errorf("expected a seed, but a public key (a.k.a. account address) is provided instead: %v", seed)
+	case *keypair.Full:
+		return nil
+	}
 }
