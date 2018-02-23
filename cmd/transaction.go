@@ -17,7 +17,7 @@ import (
 
 const (
 	accountAddressEnv = "STELLAR_ACCOUNT_ADDRESS"
-	accountSeedEnv    = "STELLAR_ACCOUNT_SEED"
+	accountSeedEnv    = "STELLAR_ACCOUNT_SEED_FILE"
 )
 
 var submitTransactionCmd = &cobra.Command{
