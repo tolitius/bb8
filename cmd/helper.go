@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"os/user"
 )
 
 func getEnv(key, fallback string) string {
@@ -19,4 +20,14 @@ func toJSON(foo interface{}) string {
 		log.Fatal("error:", err)
 	}
 	return string(b)
+}
+
+func homeDir() (string, error) {
+
+	cuser, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return cuser.HomeDir, nil
 }
