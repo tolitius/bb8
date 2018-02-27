@@ -1,0 +1,39 @@
+{"network":{
+  "mystellar-public":{
+    "name":"Friendly Official Name of the Network",
+    "passphrase":"The Passphrase of the Network",
+    "horizon":{
+      "entries":{
+        "shortName":{
+          "url":"https://my-horizon.domain.dom/"
+        },
+        "otherName":{
+          "url":"https://otherdomain.tld/horizon/"
+        },
+        "oneMore":{
+          "url":"https://horizon-backup.domain.dom"
+        }
+      },
+      "default":"shortName"
+    }
+  },
+  "mystellar-testNet":{
+    "name":"Friendly Official Name of the Test Network",
+    "passphrase":"The Passphrase of the Test Network",
+    "horizon":{
+      "entries":{
+        "shortName":{
+          "url":"https://my-horizon-testnet.domain.dom/"
+        },
+        "otherName":{
+          "url":"https://otherdomain.tld/horizon-testnet/"
+        },
+        "oneMore":{
+          "url":"https://horizon-backup-testnet.domain.dom"
+        }
+      },
+      "default":"shortName"
+    }
+  }
+}
+}

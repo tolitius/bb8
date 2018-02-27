@@ -6,11 +6,11 @@ import (
 	"reflect"
 
 	b "github.com/stellar/go/build"
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/network"
 
 	"github.com/spf13/cobra"
-	"github.com/stellar/go/clients/horizon"
-	"github.com/stellar/go/network"
 )
 
 type config struct {
@@ -18,50 +18,62 @@ type config struct {
 	network b.Network
 }
 
+const (
+	configDefaultFileName = "bb8.json"
+)
+
 var conf *config
 var standAloneFlag bool
+var networkName string
+var horizonName string
+var horizonURL string
 
-// Bb8Cmd is BB-8's root command.
-// Other commands are added to Bb8Cmd as subcommands.
-var Bb8Cmd = &cobra.Command{
+// bb8Cmd is BB-8's root command.
+// Other commands are added to bb8Cmd as subcommands.
+var bb8Cmd = &cobra.Command{
 	Use:   "bb",
 	Short: "cli to interact with Stellar network",
 	Long:  `BB-8 is a command line interface to Stellar (https://www.stellar.org/) networks.`,
 }
 
-// AddCommands adds sub commands to Bb8Cmd
+// AddCommands adds sub commands to bb8Cmd
 func AddCommands() {
-	Bb8Cmd.AddCommand(versionCmd)
-	Bb8Cmd.AddCommand(genKeysCmd)
-	Bb8Cmd.AddCommand(fundCmd)
-	Bb8Cmd.AddCommand(loadAccountCmd)
-	Bb8Cmd.AddCommand(changeTrustCmd)
-	Bb8Cmd.AddCommand(sendPaymentCmd)
-	Bb8Cmd.AddCommand(streamCmd)
-	Bb8Cmd.AddCommand(createAccountCmd)
-	Bb8Cmd.AddCommand(manageDataCmd)
-	Bb8Cmd.AddCommand(setOptionsCmd)
-	Bb8Cmd.AddCommand(decodeCmd)
-	Bb8Cmd.AddCommand(signTransactionCmd)
-	Bb8Cmd.AddCommand(submitTransactionCmd)
+	bb8Cmd.AddCommand(versionCmd)
+	bb8Cmd.AddCommand(genKeysCmd)
+	bb8Cmd.AddCommand(fundCmd)
+	bb8Cmd.AddCommand(loadAccountCmd)
+	bb8Cmd.AddCommand(changeTrustCmd)
+	bb8Cmd.AddCommand(sendPaymentCmd)
+	bb8Cmd.AddCommand(streamCmd)
+	bb8Cmd.AddCommand(createAccountCmd)
+	bb8Cmd.AddCommand(manageDataCmd)
+	bb8Cmd.AddCommand(setOptionsCmd)
+	bb8Cmd.AddCommand(decodeCmd)
+	bb8Cmd.AddCommand(signTransactionCmd)
+	bb8Cmd.AddCommand(submitTransactionCmd)
 }
 
 func init() {
+
+	bb8Cmd.Flags().StringVarP(&networkName, "network", "n", "", "network name from the BB8 config file. by default BB8 would look in \"home.dir/.bb8/bb8.json\" file")
+	bb8Cmd.Flags().StringVar(&horizonName, "horizon", "", "horizon server name from the BB8 config file. by default BB8 would look in \"home.dir/.bb8/bb8.json\" file")
+	bb8Cmd.Flags().StringVar(&horizonURL, "horizon-url", "", "horizon server URL to use for \"this\" transaction")
+
 	withStandAlone(changeTrustCmd)
 	withStandAlone(sendPaymentCmd)
 	withStandAlone(setOptionsCmd)
 	withStandAlone(manageDataCmd)
 }
 
-// Execute adds sub commands to Bb8Cmd and sets all the command line flags
+// Execute adds sub commands to bb8Cmd and sets all the command line flags
 func Execute() {
 
-	Bb8Cmd.SilenceUsage = true
+	bb8Cmd.SilenceUsage = true
 	conf = readConfig("tmp/todo")
 
 	AddCommands()
 
-	if c, err := Bb8Cmd.ExecuteC(); err != nil {
+	if c, err := bb8Cmd.ExecuteC(); err != nil {
 		c.Println("")
 		c.Println(c.UsageString())
 		os.Exit(-1)
