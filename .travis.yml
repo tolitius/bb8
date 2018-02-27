@@ -6,3 +6,4 @@ go:
 before_install:
   - go get github.com/stellar/go
   - go get github.com/spf13/cobra/cobra
+  - go get github.com/spf13/viper

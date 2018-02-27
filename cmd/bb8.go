@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"reflect"
 
@@ -11,16 +13,13 @@ import (
 	"github.com/stellar/go/network"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type config struct {
 	client  *horizon.Client
 	network b.Network
 }
-
-const (
-	configDefaultFileName = "bb8.json"
-)
 
 var conf *config
 var standAloneFlag bool
@@ -55,9 +54,9 @@ func AddCommands() {
 
 func init() {
 
-	bb8Cmd.Flags().StringVarP(&networkName, "network", "n", "", "network name from the BB8 config file. by default BB8 would look in \"home.dir/.bb8/bb8.json\" file")
-	bb8Cmd.Flags().StringVar(&horizonName, "horizon", "", "horizon server name from the BB8 config file. by default BB8 would look in \"home.dir/.bb8/bb8.json\" file")
-	bb8Cmd.Flags().StringVar(&horizonURL, "horizon-url", "", "horizon server URL to use for \"this\" transaction")
+	bb8Cmd.PersistentFlags().StringVarP(&networkName, "network", "n", "", "network name from the BB8 config file. by default BB8 would look in \"home.dir/.bb8/bb8.json\" file")
+	bb8Cmd.PersistentFlags().StringVar(&horizonName, "horizon", "", "horizon server name from the BB8 config file. by default BB8 would look in \"home.dir/.bb8/bb8.json\" file")
+	bb8Cmd.PersistentFlags().StringVar(&horizonURL, "horizon-url", "", "horizon server URL to use for \"this\" transaction")
 
 	withStandAlone(changeTrustCmd)
 	withStandAlone(sendPaymentCmd)
@@ -69,9 +68,10 @@ func init() {
 func Execute() {
 
 	bb8Cmd.SilenceUsage = true
-	conf = readConfig("tmp/todo")
 
 	AddCommands()
+
+	cobra.OnInitialize(readConfig)
 
 	if c, err := bb8Cmd.ExecuteC(); err != nil {
 		c.Println("")
@@ -90,32 +90,56 @@ func seedToPair(seed string) keypair.KP {
 	return kp
 }
 
-func readConfig(cpath string) *config {
+func readConfig() {
 
-	/*TODO: add custom network support
-	&config{
-		client: &http.Client{
-			URL:  customNetworkURL
+	viper.SetConfigName("bb8")
+	viper.AddConfigPath("$HOME/.bb8")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("running with defaults: no config file found.")
+	}
+
+	passphrase := viper.GetString(fmt.Sprintf("network.%s.passphrase", networkName))
+	url := viper.GetString(fmt.Sprintf("network.%s.horizon.entries.%s.url", networkName, horizonName))
+	defaultHorizon := viper.GetString(fmt.Sprintf("network.%s.horizon.default", networkName))
+
+	if url == "" {
+		url = viper.GetString(fmt.Sprintf("network.%s.horizon.entries.%s.url", networkName, defaultHorizon))
+	}
+
+	if horizonURL != "" {
+		url = horizonURL
+	}
+
+	conf = &config{
+		client: &horizon.Client{
+			URL:  url,
 			HTTP: http.DefaultClient,
-		}
+		},
+		network: b.Network{passphrase}}
 
-		network: b.Network{customPassphrase}}
-	*/
+	if url != "" && passphrase != "" {
+		log.Printf("running on horizon: %s\n", url)
+		return
+	}
 
 	switch snet := getEnv("STELLAR_NETWORK", "test"); snet {
 	case "public":
-		return &config{
+		url = horizon.DefaultPublicNetClient.URL
+		conf = &config{
 			client:  horizon.DefaultPublicNetClient,
 			network: b.Network{network.PublicNetworkPassphrase}}
 	case "test":
-		return &config{
+		url = horizon.DefaultTestNetClient.URL
+		conf = &config{
 			client:  horizon.DefaultTestNetClient,
 			network: b.Network{network.TestNetworkPassphrase}}
 	default:
-		log.Fatalf("Unknown Stellar network: \"%s\". Stellar network is set by the \"STELLAR_NETWORK\" environment variable. Possible values are \"public\", \"test\". An unset \"STELLAR_NETWORK\" is treated as \"test\".", snet)
+		log.Fatalf("Unknown Stellar network: \"%s\". Stellar network is either set in BB-8 config file or by the \"STELLAR_NETWORK\" environment variable. Possible values are \"public\", \"test\". An unset \"STELLAR_NETWORK\" is treated as \"test\".", snet)
 	}
 
-	return nil
+	log.Printf("running on horizon: %s\n", url)
 }
 
 func structValues(s interface{}) []interface{} {
