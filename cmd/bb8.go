@@ -100,6 +100,7 @@ func readConfig() {
 		fmt.Println("running with defaults: no config file found.")
 	}
 
+	// read url and passphrase from config
 	passphrase := viper.GetString(fmt.Sprintf("network.%s.passphrase", networkName))
 	url := viper.GetString(fmt.Sprintf("network.%s.horizon.entries.%s.url", networkName, horizonName))
 	defaultHorizon := viper.GetString(fmt.Sprintf("network.%s.horizon.default", networkName))
@@ -108,22 +109,25 @@ func readConfig() {
 		url = viper.GetString(fmt.Sprintf("network.%s.horizon.entries.%s.url", networkName, defaultHorizon))
 	}
 
+	// overwrite url from config with --horizon-url flag value
 	if horizonURL != "" {
 		url = horizonURL
 	}
 
-	conf = &config{
-		client: &horizon.Client{
-			URL:  url,
-			HTTP: http.DefaultClient,
-		},
-		network: b.Network{passphrase}}
-
 	if url != "" && passphrase != "" {
+
+		conf = &config{
+			client: &horizon.Client{
+				URL:  url,
+				HTTP: http.DefaultClient,
+			},
+			network: b.Network{passphrase}}
+
 		log.Printf("running on horizon: %s\n", url)
 		return
 	}
 
+	// if can't read both url and passphrase from config, check STELLAR_NETWORK
 	switch snet := getEnv("STELLAR_NETWORK", "test"); snet {
 	case "public":
 		url = horizon.DefaultPublicNetClient.URL
