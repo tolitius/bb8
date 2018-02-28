@@ -50,11 +50,11 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 
 ## Why
 
-There are already mutiple ways to interact with Stellar:
+There are already multiple ways to interact with Stellar:
 
 * [REST API](https://www.stellar.org/developers/horizon/reference/index.html)
 * [SDK libraries](https://www.stellar.org/developers/reference/#libraries) in several languages
-* [Stellar Labratory](https://www.stellar.org/laboratory/)
+* [Stellar Laboratory](https://www.stellar.org/laboratory/)
 
 BB-8 adds command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
 

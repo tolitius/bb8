@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	bb8Version = "0.1.9"
+	bb8Version = "0.1.11"
 )
 
 var versionCmd = &cobra.Command{
