@@ -41,6 +41,9 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Decoding Base64 XDR](#decoding-base64-xdr)
 - [Manage Data](#manage-data)
 - [Stream Stellar Events](#stream-stellar-events)
+- [Set Default Address and Seed](#set-default-address-and-seed)
+  - [Standalone Transactions](#standalone-transactions)
+  - [Composed Transactions](#composed-transactions)
 - [Help](#help)
 - [License](#license)
 
@@ -1015,6 +1018,81 @@ total fees paid: 2500
 beautiful!
 
 This and much more is brought to you by the power of command line.
+
+## Set Default Address and Seed
+
+Besides specifying account source addresses via `"source_address"` / `"from"`, etc. and seeds via `"sign ["seed1", "seed2"]"` there is a way to set default account address and account seed via `STELLAR_ACCOUNT_ADDRESS` and `STELLAR_ACCOUNT_SEED_FILE` environment variables.
+
+If they are set BB-8 will use those values which would allow to not specify them while building transactions. In case both evironment variables and explicit addresses / seeds are provided BB-8 will use the explicit values.
+
+### Standalone Transactions
+
+Here is an example of a standalone transaction that does not specify account address / seed:
+
+```sh
+$ bb manage-data -s '{"name": "answer to the ultimate question", "value": "42"}'
+2018/02/28 10:44:27 can't resolve Stellar account address (a.k.a. source account).
+                    you can set it via STELLAR_ACCOUNT_ADDRESS environment variable
+                    or provide it as a "source_account" field of the transaction
+```
+
+```sh
+$ export STELLAR_ACCOUNT_ADDRESS=$(cat foo.pub)
+```
+
+now address is resolved, but this transaction still needs to be signed before it is submitted, hence it would need a seed:
+
+```sh
+$ bb manage-data -s '{"name": "answer to the ultimate question", "value": "42"}'
+2018/02/28 10:44:47 could not submit transaction: can't find the account seed.
+                    you can either provide it explicitely in the transaction or set "STELLAR_ACCOUNT_SEED_FILE"
+                    environment variable that points to a file with a seed
+```
+
+`STELLAR_ACCOUNT_SEED_FILE` points to a file rather than a seed value directly for security purposes: i.e. not to leave shell history trails or reveal env variable values (via for exampe `docker inspect` and alike):
+
+```sh
+$ mkdir ~/.bb8/account/
+$ cp foo ~/.bb8/account/
+$ export STELLAR_ACCOUNT_SEED_FILE=~/.bb8/account/foo
+```
+
+here we copied `foo` seed to an arbitrary directory and pointed `STELLAR_ACCOUNT_SEED_FILE` to this seed file.
+
+```sh
+$ bb manage-data -s '{"name": "answer to the ultimate question", "value": "42"}'
+## great success
+```
+
+### Composed Transactions
+
+In case of composed transactions, the `sign` command will auto resolve the seed from the file `STELLAR_ACCOUNT_SEED_FILE` points to:
+
+```sh
+$ bb manage-data '{"name": "answer to the ultimate question", "value": "42"}' | xargs \
+  bb sign
+
+## AAAAAEZmoJ4/4yKi60D9d2zHo94r9CFP0pDG6g+GGXQ6rIlLAAAAZABt1SYAAAAMAAAAAAAAAAAAAAABAAAAAAAAAAoAAAAfYW5zd2VyIHRvIHRoZSB1bHRpbWF0ZSBxdWVzdGlvbgAAAAABAAAAAjQyAAAAAAAAAAAAATqsiUsAAABA4R8YMtT8FeV4zCHUGqK0wOYyAK7CAtQfima8Ym90tg49cXkjMWXfyzeghbLE8gPum0AkQG9faz0l8uU/G7RLCQ==
+```
+
+or signers can be provided explicitly:
+
+```sh
+$ bb manage-data '{"name": "answer to the ultimate question", "value": "42"}' | xargs \
+  bb sign '["'$(cat foo)'"]'
+
+## AAAAAEZmoJ4/4yKi60D9d2zHo94r9CFP0pDG6g+GGXQ6rIlLAAAAZABt1SYAAAANAAAAAAAAAAAAAAABAAAAAAAAAAoAAAAfYW5zd2VyIHRvIHRoZSB1bHRpbWF0ZSBxdWVzdGlvbgAAAAABAAAAAjQyAAAAAAAAAAAAATqsiUsAAABAcXDv/QoDC52wqimZtm1bGNaRbiIbKC0wzYZvWUZ+YzMeym+JKWgkvAmqzOcDH0PjGmE4KbHmO0xDx5HKJPBXAA==
+```
+
+Given that an address and a seed are set as environment variables transactions might become less verbose and a little more secure since for a single signature there no explicit seed:
+
+```sh
+bb send-payment '{"to": "'$(cat foo.pub)'", "amount": "42.0"}' | xargs \
+bb sign | xargs \
+bb submit
+
+## 2018/02/28 10:48:29 sending 42.0 XLM from GBDGNIE6H7RSFIXLID6XO3GHUPPCX5BBJ7JJBRXKB6DBS5B2VSEUWOG6 to GDQM2SJ2HSFPNPS2EQC6V3OF3RBJHX3WMFC2CWVIFJH6MGIWZG4DNMJK
+```
 
 ## Help
 
