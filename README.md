@@ -14,6 +14,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Download, Unpack, Go](#download-unpack-go)
   - [Or just Go](#or-just-go)
 - [Choose Stellar Network](#choose-stellar-network)
+  - [Point to a Custom Network](#point-to-a-custom-network)
 - [Buttons to Push](#buttons-to-push)
 - [Create Account Keys](#create-account-keys)
 - [Create Account](#create-account)
@@ -181,7 +182,57 @@ $ export STELLAR_NETWORK=public
 
 If `STELLAR_NETWORK` is unset or is set to "`test`" a testnet will be used.
 
-> _TODO: add support for custom / private Stellar networks (URL + passphrase)_
+### Point to a Custom Network
+
+To use a custom Stellar network add it to a BB-8 configuration file in a form of:
+
+```json
+{"network":{
+    "my-custom-stellar":{
+        "name":"friendly official name of the network",
+        "passphrase":"the passphrase of the network",
+        "horizon":{
+            "entries":{
+                "one-name":{
+                    "url":"https://my-horizon.domain.dom/"
+                },
+                "other-name":{
+                    "url":"https://otherdomain.tld/horizon/"
+                },
+                "one-more":{
+                    "url":"https://horizon-backup.domain.dom"
+                }
+            },
+            "default":"one-name"
+        }
+    }
+  }
+}
+```
+
+Here is an [example](examples/sample-config.json) of such a configuration file. This file usually lives in a user home directory as `home.dir/.bb8/bb8.json`.
+
+Then you can specify a network by name via `--network` flag:
+
+```sh
+$ bb --network my-custom-stellar command ...
+2018/02/28 12:17:40 running on horizon: https://my-horizon.domain.dom/
+```
+
+You can also specify `--horizon` and `--horizon-url` to specify horizon entry by name or a Horizon URL that is not in config:
+
+```sh
+$ bb --network my-custom-stellar --horizon one-more command ...
+2018/02/28 12:17:40 running on horizon: https://my-horizon.domain.dom/
+```
+
+Here are all the flags:
+
+```sh
+      --horizon string       horizon server name from the BB8 config file. by default BB8 would look in "home.dir/.bb8/bb8.json" file
+      --horizon-url string   horizon server URL to use for "this" transaction
+  -n, --network string       network name from the BB8 config file. by default BB8 would look in "home.dir/.bb8/bb8.json" file
+```
 
 ## Buttons to Push
 
@@ -211,7 +262,10 @@ Available Commands:
   version        print the version number of bb
 
 Flags:
-  -h, --help   help for bb
+  -h, --help                 help for bb
+      --horizon string       horizon server name from the BB8 config file. by default BB8 would look in "home.dir/.bb8/bb8.json" file
+      --horizon-url string   horizon server URL to use for "this" transaction
+  -n, --network string       network name from the BB8 config file. by default BB8 would look in "home.dir/.bb8/bb8.json" file
 
 Use "bb [command] --help" for more information about a command.
 ```
