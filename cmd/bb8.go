@@ -62,6 +62,7 @@ func init() {
 	withStandAlone(sendPaymentCmd)
 	withStandAlone(setOptionsCmd)
 	withStandAlone(manageDataCmd)
+	withStandAlone(createAccountCmd)
 }
 
 // Execute adds sub commands to bb8Cmd and sets all the command line flags
