@@ -56,7 +56,7 @@ There are already mutiple ways to interact with Stellar:
 * [SDK libraries](https://www.stellar.org/developers/reference/#libraries) in several languages
 * [Stellar Labratory](https://www.stellar.org/laboratory/)
 
-BB-8 adds a command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
+BB-8 adds command line / terminal capabilities to the Stellar family of tools. This is useful for exploration as well as the real world interaction with Stellar networks.
 
 Command line shells are interactive by design and have a very rich and familiar set of tools that could be applied to Stellar API directly, ranging from simple account details:
 
