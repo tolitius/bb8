@@ -45,7 +45,8 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 - [Set Default Address and Seed](#set-default-address-and-seed)
   - [Standalone Transactions](#standalone-transactions)
   - [Composed Transactions](#composed-transactions)
-- [Help](#help)
+- [Help Flag](#help-flag)
+- [Donate](#donate)
 - [License](#license)
 
 ## Why
@@ -1148,7 +1149,7 @@ bb submit
 ## 2018/02/28 10:48:29 sending 42.0 XLM from GBDGNIE6H7RSFIXLID6XO3GHUPPCX5BBJ7JJBRXKB6DBS5B2VSEUWOG6 to GDQM2SJ2HSFPNPS2EQC6V3OF3RBJHX3WMFC2CWVIFJH6MGIWZG4DNMJK
 ```
 
-## Help
+## Help Flag
 
 All BB-8 commands and options have descriptions and examples that are available with a `--help` / `-h` flag.
 
@@ -1220,6 +1221,19 @@ Flags:
 ```
 
 and so on. This kind of help is available for all the commands. Feel free to submit an issue in case it is missing, or more details about the command, option, flag would be helpful.
+
+## Donate
+
+BB-8 lives on the public Stellar network at `GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID`.
+
+To show support, given that your [defaults are set](#set-default-address-and-seed), and the [network is chosen](#choose-stellar-network), you could:
+
+```
+$ bb send-payment -s '{"to": "GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID",
+                       "amount": "1.0"}'
+```
+
+If you [include a memo](https://github.com/tolitius/bb8#add-memo) in your contribution BB-8 will use it to thank you publicly.
 
 ## License
 
