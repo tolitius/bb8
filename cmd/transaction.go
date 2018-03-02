@@ -218,10 +218,15 @@ func wrapEnvelope(envelope *xdr.TransactionEnvelope, muts []b.TransactionMutator
 
 func submitStandalone(conf *config, sourceAccount string, muts []b.TransactionMutator) int32 {
 
-	seed, err := resolveSeed(sourceAccount)
+	seed := sourceAccount
+	err := validateSeed(seed)
 
 	if err != nil {
-		log.Fatalf("could not submit transaction: %v", err)
+		seed, err = resolveSeed("")
+
+		if err != nil {
+			log.Fatalf("could not find a valid seed to submit transaction: %v", err)
+		}
 	}
 
 	header := txHeader{sourceAccount: seed}.
