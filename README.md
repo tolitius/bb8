@@ -2,8 +2,8 @@
 
 <img src="doc/img/stellar-bb8-logo.png" width="150px">
 
-[![Build
-Status](https://travis-ci.org/tolitius/bb8.svg?branch=master)](https://travis-ci.org/tolitius/bb8)
+[![Release Version](https://img.shields.io/github/release/tolitius/bb8.svg)](https://github.com/tolitius/bb8/releases/latest)
+[![Build Status](https://travis-ci.org/tolitius/bb8.svg?branch=master)](https://travis-ci.org/tolitius/bb8)
 
 A command line interface to [Stellar](https://www.stellar.org/) networks.
 
