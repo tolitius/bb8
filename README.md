@@ -1224,7 +1224,11 @@ and so on. This kind of help is available for all the commands. Feel free to sub
 
 ## Donate
 
-BB-8 lives on the public Stellar network at `GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID`.
+BB-8 lives on the public Stellar network at its home address:
+
+<p align="center">
+GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XP<b>DROID</b>
+</p>
 
 To show support, given that your [defaults are set](#set-default-address-and-seed), and the [network is chosen](#choose-stellar-network), you could:
 
