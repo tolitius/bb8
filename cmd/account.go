@@ -37,13 +37,41 @@ example: create-account '{"source_account":"seed", "new_account":"address", "amo
 		}
 
 		if standAloneFlag {
-			submitStandalone(conf, naccount.SourceAccountSeed, naccount.makeOp())
+			submitStandalone(conf, naccount.SourceAccountSeed, naccount.makeCreateAccountOp())
 		} else {
 			if len(args) == 1 {
-				encoded := makeEnvelope(conf, naccount.SourceAccountSeed, naccount.makeOp())
+				encoded := makeEnvelope(conf, naccount.SourceAccountSeed, naccount.makeCreateAccountOp())
 				fmt.Print(encoded)
 			} else {
-				encoded := composeWithOps(args[1], naccount.makeOp())
+				encoded := composeWithOps(args[1], naccount.makeCreateAccountOp())
+				fmt.Print(encoded)
+			}
+		}
+	},
+}
+
+var accountMergeCmd = &cobra.Command{
+	Use:   "account-merge [ars]",
+	Short: "merges two native (XLM) accounts",
+	Long: `transfers the native balance (the amount of XLM an account holds)
+to another account and removes the source account from the ledger.
+
+example: account-merge '{"source_account":"seed", "destination":"address"}'`,
+	Args: cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		maccount := &accountMerge{}
+		if err := json.Unmarshal([]byte(args[0]), maccount); err != nil {
+			log.Fatal(err)
+		}
+
+		if standAloneFlag {
+			submitStandalone(conf, maccount.SourceAccountSeed, maccount.makeAccountMergeOp())
+		} else {
+			if len(args) == 1 {
+				encoded := makeEnvelope(conf, maccount.SourceAccountSeed, maccount.makeAccountMergeOp())
+				fmt.Print(encoded)
+			} else {
+				encoded := composeWithOps(args[1], maccount.makeAccountMergeOp())
 				fmt.Print(encoded)
 			}
 		}
@@ -66,12 +94,27 @@ type newAccount struct {
 	Amount            string
 }
 
-func (c *newAccount) makeOp() (muts []b.TransactionMutator) {
+func (c *newAccount) makeCreateAccountOp() (muts []b.TransactionMutator) {
 
 	muts = []b.TransactionMutator{
 		b.CreateAccount(
 			b.Destination{AddressOrSeed: c.NewAccountAddress},
 			b.NativeAmount{Amount: c.Amount},
+		)}
+
+	return muts
+}
+
+type accountMerge struct {
+	SourceAccountSeed string `json:"source_account"`
+	Destination       string
+}
+
+func (m *accountMerge) makeAccountMergeOp() (muts []b.TransactionMutator) {
+
+	muts = []b.TransactionMutator{
+		b.AccountMerge(
+			b.Destination{m.Destination},
 		)}
 
 	return muts

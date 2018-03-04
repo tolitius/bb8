@@ -30,6 +30,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Send Non Native Assets](#send-non-native-assets)
   - [Send Native Assets](#send-native-assets)
   - [Add Memo](#add-memo)
+- [Account Merge](#account-merge)
 - [Transaction Options](#transaction-options)
   - [Add Discoverablity and Meta Information](#add-discoverablity-and-meta-information)
   - [Inflation Destination](#inflation-destination)
@@ -255,6 +256,7 @@ Available Commands:
   help           Help about any command
   load-account   load and return account details
   manage-data    set, modify or delete a Data Entry (name/value pair)
+  account-merge  merges two native (XLM) accounts
   send-payment   send payment from one account to another
   set-options    set options on the account
   sign           sign a base64 encoded transaction
@@ -664,6 +666,29 @@ $ bb send-payment -s '{"from": "'$(cat issuer)'",
                        "memo": "forty two"}'
 ```
 
+## Account Merge
+
+Stellar allows to merge two accounts by transferring the native balance (the amount of XLM an account holds) from the source account to another (destination) account and removing the source account from the ledger.
+
+BB-8 has a `account-merge` command that takes a "destination account" to merge _to_, and optionally takes a "source account" that needs to be merged. If the source account is not provided, BB-8 will use an account that is set as [default](#set-default-address-and-seed):
+
+
+```sh
+$ bb gen-keys bar
+2018/03/03 21:54:16 keys are created and stored in: bar.pub and bar
+
+$ bb fund $(cat bar.pub)
+```
+
+merging `bar` XLMs to account `foo` requires bar's signature and foo's address:
+
+```sh
+$ bb account-merge -s '{"source_account": "'$(cat bar)'",
+                        "destination":"'$(cat foo.pub)'"}'
+```
+
+once these two accounts are merged, `foo` would get all the `bar`'s XLM balance (`- 100` stroops fee for this transaction).
+`bar` would no longer exist and would be removed from the ledger.
 
 ## Transaction Options
 

@@ -50,6 +50,7 @@ func AddCommands() {
 	bb8Cmd.AddCommand(decodeCmd)
 	bb8Cmd.AddCommand(signTransactionCmd)
 	bb8Cmd.AddCommand(submitTransactionCmd)
+	bb8Cmd.AddCommand(accountMergeCmd)
 }
 
 func init() {
@@ -63,6 +64,7 @@ func init() {
 	withStandAlone(setOptionsCmd)
 	withStandAlone(manageDataCmd)
 	withStandAlone(createAccountCmd)
+	withStandAlone(accountMergeCmd)
 }
 
 // Execute adds sub commands to bb8Cmd and sets all the command line flags
