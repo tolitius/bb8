@@ -1,9 +1,9 @@
 class Bb8 < Formula
   desc "a command line interface to Stellar networks"
   homepage "https://github.com/tolitius/bb8"
-  url "https://github.com/tolitius/bb8/releases/download/v0.1.11/bb8_0.1.11_macOS_amd64.tar.gz"
-  version "0.1.11"
-  sha256 "548963b58e2022a614db043d406b28e400af1c6654cbba78e1377cc43113d0da"
+  url "https://github.com/tolitius/bb8/releases/download/v0.1.12/bb8_0.1.12_macOS_amd64.tar.gz"
+  version "0.1.12"
+  sha256 "4e8924d3d2100dd24c3d91208bc2dc84db9f83fffc488aa2f7bf9f9d4865443a"
 
   def install
     bin.install "bb"
