@@ -248,6 +248,7 @@ Usage:
   bb [command]
 
 Available Commands:
+  account-merge  merges two native (XLM) accounts
   change-trust   create, update, or delete a trustline
   create-account creates a new account
   decode         decodes a base64 encoded transaction
@@ -256,7 +257,6 @@ Available Commands:
   help           Help about any command
   load-account   load and return account details
   manage-data    set, modify or delete a Data Entry (name/value pair)
-  account-merge  merges two native (XLM) accounts
   send-payment   send payment from one account to another
   set-options    set options on the account
   sign           sign a base64 encoded transaction
