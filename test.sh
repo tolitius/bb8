@@ -36,6 +36,19 @@ assert_balance() {
 	fi
 }
 
+assert_option() {
+	pkey_file=$1
+	option=$2
+	expected=\"$3\"
+
+    actual=`$bb load-account $(cat $pkey_file) | jq '.'$option''`
+
+	if [ "$expected" != "$actual" ]; then
+		echo "[FAIL] expected option $option to be $expected, but got $actual instead"
+		exit 1
+	fi
+}
+
 ## TEST create key files
 echo TEST: create key files
 
@@ -99,6 +112,20 @@ $bb send-payment -s '{"from": "'$seed'",
                       "amount": "42.0"}'
 
 assert_balance $tmp/xyz.pub "10041.9999900" "could not send native payment"
+
+## TEST compose transaction
+echo TEST: compose transaction
+
+$bb change-trust '{"source_account": "'$(cat $tmp/xyz)'",
+                   "code": "ABC",
+                   "issuer_address": "'$pub'"}' | xargs \
+  $bb set-options  '{"home_domain": "dotkam.com",
+                    "max_weight": 1}' | xargs \
+  $bb sign '["'$(cat $tmp/xyz)'"]' | xargs \
+  $bb submit
+
+assert_balance $tmp/xyz.pub "0.0000000" "could not compose a transaction" "ABC"
+assert_option $tmp/xyz.pub "home_domain" "dotkam.com"
 
 echo "all tests... [PASS]"
 
