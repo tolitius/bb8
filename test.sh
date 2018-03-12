@@ -83,6 +83,17 @@ $bb change-trust -s '{"source_account": "'$(cat $tmp/xyz)'",
 
 assert_balance $tmp/xyz.pub "0.0000000" "could change trust" "XYZ"
 
+## TEST send payment
+echo TEST: send payment
+
+$bb send-payment -s '{"from": "'$seed'",
+                      "to": "'$(cat $tmp/xyz.pub)'",
+                      "token": "XYZ",
+                      "amount": "42.0",
+                      "issuer": "'$pub'"}'
+
+assert_balance $tmp/xyz.pub "42.0000000" "could change trust" "XYZ"
+
 echo "all tests... [PASS]"
 
 ## cleanup
