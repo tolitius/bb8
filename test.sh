@@ -22,8 +22,13 @@ assert_balance() {
     pkey_file=$1
 	expected_balance=\"$2\"
 	fail_msg=$3
+	asset=$4
 
-	balance=`$bb load-account $(cat $pkey_file) | jq '[.balances[0].balance][]'`
+	if [ -z "$asset" ]; then
+		balance=`$bb load-account $(cat $pkey_file) | jq '[.balances[0].balance][]'`
+	else
+		balance=`$bb load-account $(cat $pkey_file) | jq '.balances[] | select(.asset_code == "'$4'").balance'`
+	fi
 
 	if [ "$balance" != "$expected_balance" ]; then
 		echo "[FAIL] $fail_msg, expecting $expected_balance, but got $balance instead"
@@ -66,6 +71,17 @@ $bb create-account -s '{"source_account":"'$seed'",
 						"amount":"1.5"}'
 
 assert_balance $tmp/bar.pub "1.5000000" "could not create account"
+
+## TEST change trust
+echo TEST: change trust
+
+$bb gen-keys $tmp/xyz
+$bb fund $(cat $tmp/xyz.pub)
+$bb change-trust -s '{"source_account": "'$(cat $tmp/xyz)'",
+                      "code": "XYZ",
+                      "issuer_address": "'$pub'"}'
+
+assert_balance $tmp/xyz.pub "0.0000000" "could change trust" "XYZ"
 
 echo "all tests... [PASS]"
 
