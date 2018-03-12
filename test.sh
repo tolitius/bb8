@@ -25,7 +25,7 @@ assert_balance() {
 	asset=$4
 
 	if [ -z "$asset" ]; then
-		balance=`$bb load-account $(cat $pkey_file) | jq '[.balances[0].balance][]'`
+		balance=`$bb load-account $(cat $pkey_file) | jq '.balances[] | select(.asset_type == "native").balance'`
 	else
 		balance=`$bb load-account $(cat $pkey_file) | jq '.balances[] | select(.asset_code == "'$4'").balance'`
 	fi
@@ -81,7 +81,7 @@ $bb change-trust -s '{"source_account": "'$(cat $tmp/xyz)'",
                       "code": "XYZ",
                       "issuer_address": "'$pub'"}'
 
-assert_balance $tmp/xyz.pub "0.0000000" "could change trust" "XYZ"
+assert_balance $tmp/xyz.pub "0.0000000" "could not change trust" "XYZ"
 
 ## TEST send payment
 echo TEST: send payment
@@ -92,7 +92,13 @@ $bb send-payment -s '{"from": "'$seed'",
                       "amount": "42.0",
                       "issuer": "'$pub'"}'
 
-assert_balance $tmp/xyz.pub "42.0000000" "could change trust" "XYZ"
+assert_balance $tmp/xyz.pub "42.0000000" "could not send custom asset payment" "XYZ"
+
+$bb send-payment -s '{"from": "'$seed'",
+                      "to": "'$(cat $tmp/xyz.pub)'",
+                      "amount": "42.0"}'
+
+assert_balance $tmp/xyz.pub "10041.9999900" "could not send native payment"
 
 echo "all tests... [PASS]"
 
