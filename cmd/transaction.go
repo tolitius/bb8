@@ -85,6 +85,8 @@ var signTransactionCmd = &cobra.Command{
 
 func submitTransactionB64(stellar *horizon.Client, base64tx string) int32 {
 
+	log.Printf("submitting transaction to horizon at %s\n", conf.client.URL)
+
 	resp, err := stellar.SubmitTransaction(base64tx)
 
 	if err != nil {
@@ -107,6 +109,8 @@ func submitTransaction(stellar *horizon.Client, txn *b.TransactionBuilder, seed 
 
 	var txe b.TransactionEnvelopeBuilder
 	var err error
+
+	log.Printf("submitting transaction to horizon at %s\n", conf.client.URL)
 
 	if len(seed) > 0 {
 		txe, err = txn.Sign(seed...)

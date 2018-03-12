@@ -126,7 +126,7 @@ func readConfig() {
 			},
 			network: b.Network{passphrase}}
 
-		log.Printf("running on horizon: %s\n", url)
+		// log.Printf("running on horizon: %s\n", url)
 		return
 	}
 
@@ -146,7 +146,7 @@ func readConfig() {
 		log.Fatalf("Unknown Stellar network: \"%s\". Stellar network is either set in BB-8 config file or by the \"STELLAR_NETWORK\" environment variable. Possible values are \"public\", \"test\". An unset \"STELLAR_NETWORK\" is treated as \"test\".", snet)
 	}
 
-	log.Printf("running on horizon: %s\n", url)
+	// log.Printf("running on horizon: %s\n", url)
 }
 
 func structValues(s interface{}) []interface{} {
