@@ -39,7 +39,7 @@ assert_balance() {
 assert_option() {
 	pkey_file=$1
 	option=$2
-	expected=\"$3\"
+	expected=$3
 
     actual=`$bb load-account $(cat $pkey_file) | jq '.'$option''`
 
@@ -125,7 +125,20 @@ $bb change-trust '{"source_account": "'$(cat $tmp/xyz)'",
   $bb submit
 
 assert_balance $tmp/xyz.pub "0.0000000" "could not compose a transaction" "ABC"
-assert_option $tmp/xyz.pub "home_domain" "dotkam.com"
+assert_option $tmp/xyz.pub "home_domain" "\"dotkam.com\""
+
+## TEST set options
+echo TEST: set options
+
+$bb set-options -s '{"source_account": "'$(cat $tmp/xyz)'",
+                     "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT",
+                     "thresholds": {"low": 42, "high": 3},
+                     "home_domain": "dotkam.com"}'
+
+assert_option $tmp/xyz.pub "home_domain" "\"dotkam.com\""
+assert_option $tmp/xyz.pub "inflation_destination" "\"GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT\""
+assert_option $tmp/xyz.pub "thresholds.low_threshold" 42
+assert_option $tmp/xyz.pub "thresholds.high_threshold" 3
 
 echo "all tests... [PASS]"
 
