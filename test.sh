@@ -50,6 +50,7 @@ assert_option() {
 }
 
 ## TEST create key files
+echo
 echo TEST: create key files
 
 $bb gen-keys $seed_file
@@ -69,6 +70,7 @@ pub=$(cat $pub_file)
 seed=$(cat $seed_file)
 
 ## TEST fund on testnet
+echo
 echo TEST: fund a test account
 
 $bb fund $(cat $pub_file)
@@ -76,6 +78,7 @@ $bb fund $(cat $pub_file)
 assert_balance $pub_file "10000.0000000" "could not fund account"
 
 ## TEST create account
+echo
 echo TEST: create account
 
 $bb gen-keys $tmp/bar
@@ -86,6 +89,7 @@ $bb create-account -s '{"source_account":"'$seed'",
 assert_balance $tmp/bar.pub "1.5000000" "could not create account"
 
 ## TEST change trust
+echo
 echo TEST: change trust
 
 $bb gen-keys $tmp/xyz
@@ -97,6 +101,7 @@ $bb change-trust -s '{"source_account": "'$(cat $tmp/xyz)'",
 assert_balance $tmp/xyz.pub "0.0000000" "could not change trust" "XYZ"
 
 ## TEST send payment
+echo
 echo TEST: send payment
 
 $bb send-payment -s '{"from": "'$seed'",
@@ -114,6 +119,7 @@ $bb send-payment -s '{"from": "'$seed'",
 assert_balance $tmp/xyz.pub "10041.9999900" "could not send native payment"
 
 ## TEST manage data
+echo
 echo TEST: manage data
 
 $bb manage-data -s '{"source_account": "'$seed'",
@@ -123,6 +129,7 @@ $bb manage-data -s '{"source_account": "'$seed'",
 assert_option $pub_file "data.\"answer to the ultimate question\"" "\"NDI=\""  ##  "echo NDI= | base64 -D" will result in "42"
 
 ## TEST compose transaction
+echo
 echo TEST: compose transaction
 
 $bb change-trust '{"source_account": "'$(cat $tmp/xyz)'",
@@ -137,6 +144,7 @@ assert_balance $tmp/xyz.pub "0.0000000" "could not compose a transaction" "ABC"
 assert_option $tmp/xyz.pub "home_domain" "\"dotkam.com\""
 
 ## TEST set options
+echo
 echo TEST: set options
 
 $bb set-options -s '{"source_account": "'$(cat $tmp/xyz)'",
@@ -149,6 +157,17 @@ assert_option $tmp/xyz.pub "inflation_destination" "\"GCCD6AJOYZCUAQLX32ZJF2MKFF
 assert_option $tmp/xyz.pub "thresholds.low_threshold" 42
 assert_option $tmp/xyz.pub "thresholds.high_threshold" 3
 
+## TEST account merge
+echo
+echo TEST: account merge
+
+$bb account-merge -s '{"source_account": "'$(cat $tmp/bar)'",
+                       "destination":"'$pub'"}'
+
+assert_balance $pub_file "9957.9999500" "could not merge two native accounts"
+
+echo
+echo "==================="
 echo "all tests... [PASS]"
 
 ## cleanup
