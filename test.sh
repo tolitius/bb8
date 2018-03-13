@@ -100,9 +100,9 @@ $bb change-trust -s '{"source_account": "'$(cat $tmp/xyz)'",
 
 assert_balance $tmp/xyz.pub "0.0000000" "could not change trust" "XYZ"
 
-## TEST send payment
+## TEST send custom asset payment
 echo
-echo TEST: send payment
+echo TEST: send custom asset payment
 
 $bb send-payment -s '{"from": "'$seed'",
                       "to": "'$(cat $tmp/xyz.pub)'",
@@ -111,6 +111,10 @@ $bb send-payment -s '{"from": "'$seed'",
                       "issuer": "'$pub'"}'
 
 assert_balance $tmp/xyz.pub "42.0000000" "could not send custom asset payment" "XYZ"
+
+## TEST send native payment
+echo
+echo TEST: send native payment
 
 $bb send-payment -s '{"from": "'$seed'",
                       "to": "'$(cat $tmp/xyz.pub)'",
