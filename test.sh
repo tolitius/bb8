@@ -41,7 +41,7 @@ assert_option() {
 	option=$2
 	expected=$3
 
-    actual=`$bb load-account $(cat $pkey_file) | jq '.'$option''`
+    actual=`$bb load-account $(cat $pkey_file) | jq '.'"$option"''`
 
 	if [ "$expected" != "$actual" ]; then
 		echo "[FAIL] expected option $option to be $expected, but got $actual instead"
@@ -112,6 +112,15 @@ $bb send-payment -s '{"from": "'$seed'",
                       "amount": "42.0"}'
 
 assert_balance $tmp/xyz.pub "10041.9999900" "could not send native payment"
+
+## TEST manage data
+echo TEST: manage data
+
+$bb manage-data -s '{"source_account": "'$seed'",
+                     "name": "answer to the ultimate question",
+					 "value": "42"}'
+
+assert_option $pub_file "data.\"answer to the ultimate question\"" "\"NDI=\""  ##  "echo NDI= | base64 -D" will result in "42"
 
 ## TEST compose transaction
 echo TEST: compose transaction
