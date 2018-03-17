@@ -36,7 +36,7 @@ events are streamed in JSON and will do so forever or for a period of time speci
 
 example: stream --ledger
          stream -t GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP --seconds 42 --cursor now
-         stream -p GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP -s 42`,
+         stream -p luke_skywalker*scoutship.com -s 42`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -63,7 +63,7 @@ example: stream --ledger
 		}
 
 		if transactions != "" {
-			err := conf.client.StreamTransactions(ctx, transactions, &cursor, transactionHandler)
+			err := conf.client.StreamTransactions(ctx, uniformAddress(transactions), &cursor, transactionHandler)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -71,7 +71,7 @@ example: stream --ledger
 		}
 
 		if payments != "" {
-			err := conf.client.StreamPayments(ctx, payments, &cursor, paymentHandler)
+			err := conf.client.StreamPayments(ctx, uniformAddress(payments), &cursor, paymentHandler)
 			if err != nil {
 				log.Fatal(err)
 			}

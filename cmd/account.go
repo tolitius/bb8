@@ -22,10 +22,10 @@ var loadAccountCmd = &cobra.Command{
 }
 
 var createAccountCmd = &cobra.Command{
-	Use:   "create-account [ars]",
+	Use:   "create-account [args]",
 	Short: "creates a new account",
 	Long: `using a source account and a new accounts address create a new account
-by sending an (initial) amount of XML from the source account to the new account address.
+by sending an (initial) amount of XLM from the source account to the new account address.
 hence needs a source account seed to sign this transaction.
 
 example: create-account '{"source_account":"seed", "new_account":"address", "amount":"42.0"}'`,
@@ -80,7 +80,9 @@ example: account-merge '{"source_account":"seed", "destination":"address"}'`,
 
 func loadAccount(stellar *horizon.Client, address string) horizon.Account {
 
-	account, err := stellar.LoadAccount(address)
+	uaddr := uniformAddress(address)
+
+	account, err := stellar.LoadAccount(uaddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,9 +98,11 @@ type newAccount struct {
 
 func (c *newAccount) makeCreateAccountOp() (muts []b.TransactionMutator) {
 
+	address := uniformAddress(c.NewAccountAddress)
+
 	muts = []b.TransactionMutator{
 		b.CreateAccount(
-			b.Destination{AddressOrSeed: c.NewAccountAddress},
+			b.Destination{AddressOrSeed: address},
 			b.NativeAmount{Amount: c.Amount},
 		)}
 
@@ -112,9 +116,11 @@ type accountMerge struct {
 
 func (m *accountMerge) makeAccountMergeOp() (muts []b.TransactionMutator) {
 
+	address := uniformAddress(m.Destination)
+
 	muts = []b.TransactionMutator{
 		b.AccountMerge(
-			b.Destination{m.Destination},
+			b.Destination{address},
 		)}
 
 	return muts

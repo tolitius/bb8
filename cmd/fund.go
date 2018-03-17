@@ -25,7 +25,7 @@ var fundCmd = &cobra.Command{
 
 func fundTestAccount(url, address string) {
 
-	resp, err := http.Get(url + address)
+	resp, err := http.Get(url + uniformAddress(address))
 	if err != nil {
 		log.Fatal(err)
 	}

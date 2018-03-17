@@ -275,7 +275,7 @@ func composeWithOps(xdr string, muts []b.TransactionMutator) string {
 func resolveAddress(address string) string {
 
 	if address != "" {
-		return address
+		return uniformAddress(address)
 	}
 
 	account := getEnv(accountAddressEnv, "")
@@ -284,7 +284,7 @@ func resolveAddress(address string) string {
 		log.Fatalf("can't resolve Stellar account address (a.k.a. source account). you can set it via %s environment variable or provide it as a \"%s\" field of the transaction", accountAddressEnv, "source_account")
 	}
 
-	return account
+	return uniformAddress(account) // in case it was exported as a federation address
 }
 
 func resolveSeed(seed string) (string, error) {

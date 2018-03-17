@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/clients/federation"
@@ -27,16 +28,17 @@ example: federation --address luke_skywalker*scoutship.com
 		}
 
 		if address != "" {
-			resp, err := NewFederationClient().LookupByAddress(address)
+			account, err := newFederationClient().LookupByAddress(address)
+
 			if err != nil {
 				log.Fatalf("could not resolve federation address %s due to %v", address, err)
 			}
 
-			fmt.Println(resp.AccountID)
+			fmt.Println(account.AccountID)
 		}
 
 		if account != "" {
-			resp, err := NewFederationClient().LookupByAccountID(account)
+			resp, err := newFederationClient().LookupByAccountID(account)
 			if err != nil {
 				log.Fatalf("could not resolve federation stellar account id %s due to %v", account, err)
 			}
@@ -51,10 +53,28 @@ func init() {
 	federationCmd.PersistentFlags().StringVarP(&account, "account", "s", "", "convert stellar account to a federation address. example: --account GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID")
 }
 
-func NewFederationClient() *federation.Client {
+func newFederationClient() *federation.Client {
 	return &federation.Client{
 		HTTP:        http.DefaultClient,
 		Horizon:     conf.client,
 		StellarTOML: stellartoml.DefaultClient,
 	}
+}
+
+func uniformAddress(address string) string {
+
+	// federation addresses are divided into two parts separated by *, the username and the domain
+	// https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0002.md#specification
+	if strings.Contains(address, "*") {
+
+		account, err := newFederationClient().LookupByAddress(address)
+
+		if err != nil {
+			log.Fatalf("could not resolve federation address %s due to %v", address, err)
+		}
+
+		return account.AccountID
+	}
+
+	return address
 }

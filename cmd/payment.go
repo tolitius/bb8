@@ -51,6 +51,7 @@ func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 	}
 
 	from := resolveAddress(t.From)
+	to := uniformAddress(t.To)
 
 	if from == "" {
 		log.Fatalf("can't send payment, missing a source (a.k.a. account address/seed)")
@@ -63,12 +64,12 @@ func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 
 	if t.Token == "XLM" && t.Issuer == "" {
 		payment = b.Payment(
-			b.Destination{t.To},
+			b.Destination{to},
 			b.NativeAmount{Amount: t.Amount},
 		)
 	} else {
 		payment = b.Payment(
-			b.Destination{t.To},
+			b.Destination{to},
 			b.CreditAmount{t.Token, t.Issuer, t.Amount},
 		)
 	}
