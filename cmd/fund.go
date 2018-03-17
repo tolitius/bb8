@@ -6,7 +6,10 @@ import (
 	"net/http"
 
 	"github.com/spf13/cobra"
-	"github.com/stellar/go/clients/horizon"
+)
+
+const (
+	friendbotURL = "https://friendbot.stellar.org/?addr="
 )
 
 var fundCmd = &cobra.Command{
@@ -15,14 +18,14 @@ var fundCmd = &cobra.Command{
 	Long:  `using Stellar's Friendbot funds a Stellar test account with 10,000 lumens.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fundTestAccount(conf.client, args[0])
+		fundTestAccount(friendbotURL, args[0])
 	},
 	DisableFlagsInUseLine: true,
 }
 
-func fundTestAccount(stellar *horizon.Client, address string) {
+func fundTestAccount(url, address string) {
 
-	resp, err := http.Get(stellar.URL + "/friendbot?addr=" + address)
+	resp, err := http.Get(url + address)
 	if err != nil {
 		log.Fatal(err)
 	}
