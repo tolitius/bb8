@@ -46,6 +46,9 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
 - [Set Default Address and Seed](#set-default-address-and-seed)
   - [Standalone Transactions](#standalone-transactions)
   - [Composed Transactions](#composed-transactions)
+- [Federation](#federation)
+  - [Lookup Account or Address](#lookup-account-or-address)
+  - [Federation Address in Transactions](#federation-address-in-transactions)
 - [Help Flag](#help-flag)
 - [Donate](#donate)
 - [License](#license)
@@ -95,7 +98,7 @@ $ bb change-trust '{"source_account": "seed",
 and runtime rollups:
 
 ```sh
-$ bb stream --transactions GADGVH6PHMF2UGVHO446SHQR2WUJEELRBSDPRQBP7K63WJBKMV5MFX2F |
+$ bb stream --transactions bob*stellar.org |
             grep --line-buffered fee_paid |
             awk -F" " '{rollup+=$2; print "total fees paid: "rollup}'
 
@@ -1172,6 +1175,58 @@ bb sign | xargs \
 bb submit
 
 ## 2018/02/28 10:48:29 sending 42.0 XLM from GBDGNIE6H7RSFIXLID6XO3GHUPPCX5BBJ7JJBRXKB6DBS5B2VSEUWOG6 to GDQM2SJ2HSFPNPS2EQC6V3OF3RBJHX3WMFC2CWVIFJH6MGIWZG4DNMJK
+```
+## Federation
+
+> The Stellar federation protocol maps Stellar addresses to more information about a given user. It’s a way for Stellar client software to resolve email-like addresses such as name*yourdomain.com into account IDs like: GCCVPYFOHY7ZB7557JKENAX62LUAPLMGIWNZJAFV2MITK6T32V37KEJU. (_more from [Stellar docs](https://www.stellar.org/developers/guides/concepts/federation.html)_)
+
+In short whenever BB-8 sees an address such as `luke_skywalker*dotkam.com` instead of a public key / account address, it would:
+
+* reach out to "dotkam.com" to ask where the federation server is by looking at "https://dotkam.com/.well-known/stellar.toml"
+* then it would go to that federation server and ask it to map `luke_skywalker*dotkam.com` to an account address such as `GDQM2SJ2HSFPNPS2EQC6V3OF3RBJHX3WMFC2CWVIFJH6MGIWZG4DNMJK`.
+
+### Lookup Account or Address
+
+BB-8 has a `federation` command to lookup accounts and addresses.
+
+federation address to account:
+
+```
+$ bb federation --address "bob*dotkam.com"
+GCPZIJCYNMJNVXWUCS52AKIB5MRVRR4GCKX5CYGSFCTWOIRL2FZ5IECZ
+
+$ bb federation --address "alice*dotkam.com"
+GDDDAGQE7KM2ECZWIQ4HA4CK56NKDI4UD6636HRYTAKCBVKW6JQVHN4X
+```
+
+account to federation address:
+
+```
+$ bb federation --account GCPZIJCYNMJNVXWUCS52AKIB5MRVRR4GCKX5CYGSFCTWOIRL2FZ5IECZ
+bob*dotkam.com
+
+$ bb federation --account GDDDAGQE7KM2ECZWIQ4HA4CK56NKDI4UD6636HRYTAKCBVKW6JQVHN4X                                                 
+alice*dotkam.com
+```
+
+### Federation Address in Transactions
+
+Of course what makes federation so useful is an ability to run Stellar commands based on human readable addresses. BB-8 will accept federation addresses in transactions and it would map them to the real Stellar accounts automatically when processing these transactions:
+
+```
+$ bb send-payment -s '{"from": "'$(cat distributor)'",
+                       "to": "alice*dotkam.com",
+                       "amount": "42.0"}'
+                      
+2018/03/17 13:31:09 sending 42.0 XLM from GBDGNI....EUWOG6 to alice*dotkam.com
+```
+
+```
+$ bb load-account "alice*dotkam.com" | jq '.balances'
+{
+  "balance": "10041.9999900",
+  "asset_type": "native"
+}
 ```
 
 ## Help Flag
