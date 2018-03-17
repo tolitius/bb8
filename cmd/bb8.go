@@ -51,6 +51,7 @@ func AddCommands() {
 	bb8Cmd.AddCommand(signTransactionCmd)
 	bb8Cmd.AddCommand(submitTransactionCmd)
 	bb8Cmd.AddCommand(accountMergeCmd)
+	bb8Cmd.AddCommand(federationCmd)
 }
 
 func init() {
