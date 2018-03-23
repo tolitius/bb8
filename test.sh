@@ -13,6 +13,13 @@ seed_file=$tmp/$seed_name
 
 bb=./bb8
 
+## this does exist on a public Stellar network, to test STELLAR_NETWORK switch
+BB8_ACCOUNT=GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID
+BB8_FEDERATION_ADDRESS=bb8*dotkam.com
+
+## making sure tests are not run against someone's / public network
+unset STELLAR_NETWORK
+
 ## get the latest build
 rm ./bb8
 go build
@@ -173,14 +180,31 @@ assert_balance $pub_file "9957.9999500" "could not merge two native accounts"
 
 ## TEST federation
 echo
-echo TEST: federation lookups
+echo TEST: federation address lookup
 
-address=`$bb federation --address "bb8*dotkam.com"`
+account=`$bb federation --address "$BB8_FEDERATION_ADDRESS"`
 
-if [ "$address" != "GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID" ]; then
-  echo "[FAIL] BB-8 address on the federation server was not found or does not match"
+if [ "$account" != "$BB8_ACCOUNT" ]; then
+  echo "[FAIL] could not lookup $BB8_FEDERATION_ADDRESS address on the federation server"
   exit 1
 fi
+
+## TEST federation
+echo
+echo 'TEST: federation account lookup and network switch (via STELLAR_NETWORK)'
+
+## the BB-8 account address only exists on the Stellar public network
+export STELLAR_NETWORK=public
+
+address=`$bb federation --account $BB8_ACCOUNT`
+
+if [ "$address" != "$BB8_FEDERATION_ADDRESS" ]; then
+  echo "[FAIL] could not lookup $BB8_ACCOUNT account on the federation server"
+  unset STELLAR_NETWORK
+  exit 1
+fi
+
+unset STELLAR_NETWORK
 
 echo
 echo "==================="
