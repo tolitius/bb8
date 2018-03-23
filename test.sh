@@ -170,6 +170,18 @@ $bb account-merge -s '{"source_account": "'$(cat $tmp/bar)'",
 
 assert_balance $pub_file "9957.9999500" "could not merge two native accounts"
 
+
+## TEST federation
+echo
+echo TEST: federation lookups
+
+address=`$bb federation --address "bb8*dotkam.com"`
+
+if [ "$address" != "GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID" ]; then
+  echo "[FAIL] BB-8 address on the federation server was not found or does not match"
+  exit 1
+fi
+
 echo
 echo "==================="
 echo "all tests... [PASS]"
