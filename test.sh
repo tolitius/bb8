@@ -131,13 +131,21 @@ assert_balance $tmp/xyz.pub "10041.9999900" "could not send native payment"
 
 ## TEST manage data
 echo
-echo TEST: manage data
+echo TEST: manage data: add value
 
 $bb manage-data -s '{"source_account": "'$seed'",
                      "name": "answer to the ultimate question",
                      "value": "42"}'
 
 assert_option $pub_file "data.\"answer to the ultimate question\"" "\"NDI=\""  ##  "echo NDI= | base64 -D" will result in "42"
+
+echo
+echo TEST: manage data: remove value
+
+$bb manage-data -s '{"source_account": "'$seed'",
+                     "name": "answer to the ultimate question"}'
+
+assert_option $pub_file "data.\"answer to the ultimate question\"" "null"
 
 ## TEST compose transaction
 echo
@@ -175,7 +183,7 @@ echo TEST: account merge
 $bb account-merge -s '{"source_account": "'$(cat $tmp/bar)'",
                        "destination":"'$pub'"}'
 
-assert_balance $pub_file "9957.9999500" "could not merge two native accounts"
+assert_balance $pub_file "9957.9999400" "could not merge two native accounts"
 
 
 ## TEST federation

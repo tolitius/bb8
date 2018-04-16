@@ -18,9 +18,14 @@ each DataEntry increases the minimum balance needed to be held by the account.
 
 this command takes parameters in JSON.
 
-example: manage-data '{"source_account": "seed",
+example: //adding data
+         manage-data '{"source_account": "seed",
                        "name": "the answer to the ultimate question of life, the universe and everything",
-                       "value": 42}'`,
+                       "value": 42}'
+
+         //removing data
+         manage-data '{"source_account": "seed",
+                       "name": "the answer to the ultimate question of life, the universe and everything"}'`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -53,9 +58,13 @@ func (md *manageData) makeOp() (muts []b.TransactionMutator) {
 
 	// source := seedToPair(md.SourceAccount)
 
-	muts = []b.TransactionMutator{
-		b.SourceAccount{AddressOrSeed: resolveAddress(md.SourceAccount)},
-		b.SetData(md.Name, []byte(md.Value))}
+	if md.Value != "" {
+		return []b.TransactionMutator{
+			b.SourceAccount{AddressOrSeed: resolveAddress(md.SourceAccount)},
+			b.SetData(md.Name, []byte(md.Value))}
+	}
 
-	return muts
+	return []b.TransactionMutator{
+		b.SourceAccount{AddressOrSeed: resolveAddress(md.SourceAccount)},
+		b.ClearData(md.Name)}
 }

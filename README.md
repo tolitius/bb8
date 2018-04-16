@@ -1018,6 +1018,24 @@ $ bb manage-data '{"source_account": "'$(cat seed)'",
 
 `DataValue` was converted to bytes, but no worries, it is still `42`.
 
+
+### Remove Data
+
+Providing just the name (a.k.a. key) without the value (a.k.a. data) would _remove_ this "name, value" pair from the account:
+
+```
+$ bb manage-data -s '{"source_account": "'$(cat seed)'",
+                      "name": "answer to the ultimate question"}'
+```
+
+JSON `null` is also supported (would remove this "name,value" pair):
+
+```
+$ bb manage-data -s '{"source_account": "'$(cat seed)'",
+                      "name": "answer to the ultimate question",
+                      "value": null}'
+```
+
 ## Stream Stellar Events
 
 BB-8 has a `stream` command that will latch onto a Stellar network and will listen to ledger, account transaction and payment events. Here are more details from its `--help` section:
