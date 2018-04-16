@@ -42,6 +42,8 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Issue Token and Set Options](#issue-token-and-set-options)
   - [Decoding Base64 XDR](#decoding-base64-xdr)
 - [Manage Data](#manage-data)
+  - [Add Data](#add-data)
+  - [Remove Data](#remove-data)
 - [Stream Stellar Events](#stream-stellar-events)
 - [Set Default Address and Seed](#set-default-address-and-seed)
   - [Standalone Transactions](#standalone-transactions)
@@ -980,6 +982,8 @@ As documentation suggests it allows you to set, modify or delete a Data Entry (n
 DataEntries can be used for application specific things. They are not used by the core Stellar protocol.
 
 Keys are string that are up to 64 bytes long and values (a.k.a. names) are bytes that are 64 bytes long.
+
+### Add Data
 
 `BB-8` has a `manage-data` command that creates a "Manage Data" transaction operation:
 
