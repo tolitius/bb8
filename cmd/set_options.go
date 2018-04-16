@@ -25,19 +25,19 @@ given a "source_account" sets options on it. supported options are:
   * add_signer
   * remove_signer
 
-example: set-options '{"source_account": "seed"
+example: set-options '{"source_account": "seed",
                        "home_domain": "stellar.org"}'
 
-         set-options '{"source_account": "seed"
+         set-options '{"source_account": "seed",
                        "home_domain": "stellar.org",
                        "max_weight": 1,
                        "inflation_destination": "GCCD6AJOYZCUAQLX32ZJF2MKFFAUJ53PVCFQI3RHWKL3V47QYE2BNAUT"}'
 
-         set-options '{"source_account": "seed"
+         set-options '{"source_account": "seed",
                        "thresholds": {"low": 1, "high": 1},
                        "set_flags": ["auth_revocable", "auth_required"]}'
 
-         set-options '{"source_account": "seed"
+         set-options '{"source_account": "seed",
                        "add_signer": {"address": "GCU2XASMVOOJCUAEPOEL7SHNIRJA3IRSDIE4UTXA4QLJHMB5BFXOLNOB",
                                       "weight": 3}}'`,
 	Args: cobra.MinimumNArgs(1),

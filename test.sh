@@ -103,7 +103,7 @@ $bb gen-keys $tmp/xyz
 $bb fund $(cat $tmp/xyz.pub)
 $bb change-trust -s '{"source_account": "'$(cat $tmp/xyz)'",
                       "code": "XYZ",
-                      "issuer_address": "'$pub'"}'
+                      "issuer": "'$pub'"}'
 
 assert_balance $tmp/xyz.pub "0.0000000" "could not change trust" "XYZ"
 
@@ -135,7 +135,7 @@ echo TEST: manage data
 
 $bb manage-data -s '{"source_account": "'$seed'",
                      "name": "answer to the ultimate question",
-					 "value": "42"}'
+                     "value": "42"}'
 
 assert_option $pub_file "data.\"answer to the ultimate question\"" "\"NDI=\""  ##  "echo NDI= | base64 -D" will result in "42"
 
@@ -145,7 +145,7 @@ echo TEST: compose transaction
 
 $bb change-trust '{"source_account": "'$(cat $tmp/xyz)'",
                    "code": "ABC",
-                   "issuer_address": "'$pub'"}' | xargs \
+                   "issuer": "'$pub'"}' | xargs \
   $bb set-options  '{"home_domain": "dotkam.com",
                     "max_weight": 1}' | xargs \
   $bb sign '["'$(cat $tmp/xyz)'"]' | xargs \

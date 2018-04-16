@@ -68,6 +68,10 @@ func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 			b.NativeAmount{Amount: t.Amount},
 		)
 	} else {
+
+		// convert federation address to Stellar account address if needed
+		t.Issuer = uniformAddress(t.Issuer)
+
 		payment = b.Payment(
 			b.Destination{to},
 			b.CreditAmount{t.Token, t.Issuer, t.Amount},

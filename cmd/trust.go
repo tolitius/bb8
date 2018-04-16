@@ -41,6 +41,7 @@ example: change-trust '{"source_account": "seed", "code": "XYZ", "issuer_address
 type changeTrust struct {
 	SourceAccount string `json:"source_account"`
 	IssuerAddress string `json:"issuer_address"`
+	Issuer        string `json:"issuer"`
 	Code, Limit   string
 }
 
@@ -52,6 +53,14 @@ func (ct *changeTrust) makeOp() (muts []b.TransactionMutator) {
 	if ct.Limit != "" {
 		limit = b.Limit(ct.Limit)
 	}
+
+	// adds backward compatibility for both
+	if ct.IssuerAddress == "" {
+		ct.IssuerAddress = ct.Issuer
+	}
+
+	// convert federation address to Stellar account address if needed
+	ct.IssuerAddress = uniformAddress(ct.IssuerAddress)
 
 	muts = []b.TransactionMutator{
 		b.SourceAccount{AddressOrSeed: resolveAddress(ct.SourceAccount)},

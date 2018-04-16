@@ -100,8 +100,12 @@ func readConfig() {
 	viper.AddConfigPath("$HOME/.bb8")
 
 	err := viper.ReadInConfig()
+
 	if err != nil {
-		fmt.Println("running with defaults: no config file found.")
+		//TODO: this would break JSON output (jq, etc.)
+		//      think about a different way for informing about defaults
+
+		// fmt.Println("running with defaults: no config file found.")
 	}
 
 	// read url and passphrase from config

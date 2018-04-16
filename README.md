@@ -88,7 +88,7 @@ to transaction operation composition:
 ```sh
 $ bb change-trust '{"source_account": "seed",
                     "code": "YUM",
-                    "issuer_address": "address"}' | xargs \
+                    "issuer": "address"}' | xargs \
   bb set-options  '{"home_domain": "stellar.org",
                     "max_weight": 1}' | xargs \
   bb sign '["seed"]' | xargs \
@@ -493,7 +493,7 @@ In order to do that we'd use a `change-trust` command to setup a trustline betwe
 ``` sh
 $ bb change-trust -s '{"source_account": "'$(cat distributor)'",
                        "code": "YUM",
-                       "issuer_address": "'$(cat issuer.pub)'"}'
+                       "issuer": "'$(cat issuer.pub)'"}'
 ```
 
 `change-trust` does several things:
@@ -534,7 +534,7 @@ The `change-trust` command takes an optional `limit` parameter to set such a cap
 ``` sh
 $ bb change-trust -s '{"source_account": "'$(cat distributor)'",
                        "code": "YUM",
-                       "issuer_address": "'$(cat issuer.pub)'",
+                       "issuer": "'$(cat issuer.pub)'",
                        "limit": "42.0"}'
 ```
 
@@ -863,7 +863,7 @@ Let's issue a composition token `COMP` by composing "change-trust", "set-options
 ```sh
 $ bb change-trust '{"source_account": "'$(cat distributor)'",
                     "code": "COMP",
-                    "issuer_address": "'$(cat issuer.pub)'"}' | xargs \
+                    "issuer": "'$(cat issuer.pub)'"}' | xargs \
   bb set-options  '{"home_domain": "dotkam.com",
                     "max_weight": 1}' | xargs \
   bb sign '["'$(cat distributor)'"]' | xargs \
@@ -877,7 +877,7 @@ If transaction command chain does not end with "submit", it would return a base6
 ```sh
 $ bb change-trust '{"source_account": "'$(cat distributor)'",
                     "code": "CMP",
-                    "issuer_address": "'$(cat issuer.pub)'"}' | xargs \
+                    "issuer": "'$(cat issuer.pub)'"}' | xargs \
   bb set-options  '{"home_domain": "dotkam.com",
                     "max_weight": 1}' | xargs \
   bb sign '["'$(cat distributor)'"]'
@@ -891,7 +891,7 @@ BB-8 has a `decode` command that decodes this into a readable [XDR](https://www.
 ```sh
 $ bb change-trust '{"source_account": "'$(cat distributor)'",
                     "code": "COMP",
-                    "issuer_address": "'$(cat issuer.pub)'"}' | xargs \
+                    "issuer": "'$(cat issuer.pub)'"}' | xargs \
   bb set-options  '{"home_domain": "dotkam.com",
                     "max_weight": 1}' | xargs \
   bb sign '["'$(cat distributor)'"]' | xargs \
@@ -1205,7 +1205,7 @@ account to federation address:
 $ bb federation --account GCPZIJCYNMJNVXWUCS52AKIB5MRVRR4GCKX5CYGSFCTWOIRL2FZ5IECZ
 bob*dotkam.com
 
-$ bb federation --account GDDDAGQE7KM2ECZWIQ4HA4CK56NKDI4UD6636HRYTAKCBVKW6JQVHN4X                                                 
+$ bb federation --account GDDDAGQE7KM2ECZWIQ4HA4CK56NKDI4UD6636HRYTAKCBVKW6JQVHN4X
 alice*dotkam.com
 ```
 
@@ -1217,7 +1217,7 @@ Of course what makes federation so useful is an ability to run Stellar commands 
 $ bb send-payment -s '{"from": "'$(cat distributor)'",
                        "to": "alice*dotkam.com",
                        "amount": "42.0"}'
-                      
+
 2018/03/17 13:31:09 sending 42.0 XLM from GBDGNI....EUWOG6 to alice*dotkam.com
 ```
 
@@ -1227,6 +1227,23 @@ $ bb load-account "alice*dotkam.com" | jq '.balances'
   "balance": "10041.9999900",
   "asset_type": "native"
 }
+```
+
+BB-8 will translate federation addresses for issuer's addresses as well:
+
+```
+$ bb change-trust -s '{"source_account": "'$(cat foo)'",
+                       "code": "TIL",
+                       "issuer": "bb8*dotkam.com"}'
+```
+
+or
+
+```
+$ bb send-payment -s '{"to": "alice*dotkam.com",
+                       "token": "TIL",
+                       "amount": "42",
+                       "issuer": "bb8*dotkam.com"}'
 ```
 
 ## Help Flag
