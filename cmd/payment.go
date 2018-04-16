@@ -42,12 +42,22 @@ example: send-payment '{"from": "seed", "to": "address", "amount": "42.0"}'
 
 type tokenPayment struct {
 	From, To, Amount, Token, Issuer, Memo string
+	AssetIssuer                           string `json:"asset_issuer"`
+	AssetCode                             string `json:"asset_code"`
 }
 
 func (t *tokenPayment) makeOp() (muts []b.TransactionMutator) {
 
 	if t.Token == "" {
-		t.Token = "XLM"
+		t.Token = t.AssetCode
+		if t.Token == "" {
+			t.Token = "XLM"
+		}
+	}
+
+	// adds backward compatibility for asset_issuer and asset_code: will depricate in future versions leaving only one of each
+	if t.Issuer == "" {
+		t.Issuer = t.AssetIssuer
 	}
 
 	from := resolveAddress(t.From)
