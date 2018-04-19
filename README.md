@@ -1386,6 +1386,13 @@ $ bb send-payment -s '{"to": "GAUYQY4TB22GPRXXLVLK24ZVPTAGGQM7FQNYVXNZMMKX65UJVX
                        "amount": "1.0"}'
 ```
 
+or if you are the first one to donate you can create this BB-8 account with:
+
+```
+$ bb create-account -s '{"new_account":"GAUYQY4TB22GPRXXLVLK24ZVPTAGGQM7FQNYVXNZMMKX65UJVX6DROID",
+                         "amount":"1.0"}'
+```
+
 If you [include a memo](https://github.com/tolitius/bb8#add-memo) in your contribution BB-8 will use it to thank you publicly.
 
 ## License
