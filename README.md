@@ -319,23 +319,26 @@ Sometimes it is desired to have a recognizable Stellar address. There are a coup
 
 A new "vanity address" can be generated with `gen-keys` command by giving it a desired suffux (`--suffix`/`-s`).
 
-For example, BB-8 has an old friend [R2-D2](https://en.wikipedia.org/wiki/R2-D2) who found out about Stellar and is itching to try it. As a true friend, BB-8 can generate a vanity address for R2-D2 that ends with "R2D2" characters so there is less confusion when looking at the key:
+For example, BB-8 has an old friend [R2-D2](https://en.wikipedia.org/wiki/R2-D2) who found out about Stellar and is itching to try it. As a true friend, BB-8 can generate a vanity address for R2-D2 that ends with "`ARTOO`" characters so there is less confusion when looking at the key:
 
 ```sh
-$ bb gen-keys -s R2D2 r2d2
+$ bb gen-keys --suffix ARTOO r2d2
 
-2018/04/18 23:47:34 asking 8 CPU cores to find keys with R2D2 suffix. stand by.
-went through 550,661 keys	| rate 55,066/s	| keep looking
-went through 1,071,110 keys	| rate 52,044/s	| keep looking
+2018/04/19 18:10:33 asking 8 CPU cores to find keys with ARTOO suffix. stand by.
+went through 1,006,713 keys	| rate 100,671/s	| still looking
+went through 2,035,593 keys	| rate 102,829/s	| still looking
+went through 3,060,833 keys	| rate 102,400/s	| still looking
+went through 4,086,549 keys	| rate 102,571/s	| still looking
+went through 5,105,370 keys	| rate 101,881/s	| still looking
 +----------------------------------------------------------+--------+--------------+-------------------+
 |                         ADDRESS                          | SUFFIX | TOOK SECONDS | WENT THROUGH KEYS |
 +----------------------------------------------------------+--------+--------------+-------------------+
-| GDOQXK5J46H5WXRHUBRBGJOOTMAVKS6OCSFDJVTWLFHBYHRE264DR2D2 | R2D2   |           20 |           1134976 |
+| GASORP4RN4YWUTO64VLCM7CSQSMASMG53LPHXO5YHG4TPU6FMTGARTOO | ARTOO  |           50 |           5549842 |
 +----------------------------------------------------------+--------+--------------+-------------------+
-2018/04/18 23:47:55 keys are created and stored in: r2d2.pub and r2d2
+2018/04/19 18:11:28 keys are created and stored in: r2d2.pub and r2d2
 ```
 
-As you can see BB-8 looked up the number of CPU cores available and gently asked these cores to generate new Stellar addresses until one of them has an `R2D2` suffix.
+As you can see BB-8 looked up the number of CPU cores available and gently asked these cores to generate new Stellar addresses until one of them has an `ARTOO` suffix.
 
 ## Create Account
 
