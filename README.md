@@ -319,7 +319,7 @@ Sometimes it is desired to have a recognizable Stellar address. There are a coup
 
 A new "vanity address" can be generated with `gen-keys` command by giving it a desired suffux (`--suffix`/`-s`).
 
-For example, BB-8 has a old friend [R2-D2](https://en.wikipedia.org/wiki/R2-D2) who found out about Stellar and is itching to try it. As a true friend, BB-8 can generate a vanity address for R2-D2 that ends with "R2D2" characters so there is less confusion when looking at the key:
+For example, BB-8 has an old friend [R2-D2](https://en.wikipedia.org/wiki/R2-D2) who found out about Stellar and is itching to try it. As a true friend, BB-8 can generate a vanity address for R2-D2 that ends with "R2D2" characters so there is less confusion when looking at the key:
 
 ```sh
 $ bb gen-keys -s R2D2 r2d2
@@ -1376,13 +1376,13 @@ and so on. This kind of help is available for all the commands. Feel free to sub
 BB-8 lives on the public Stellar network at its home address:
 
 <p align="center">
-GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XP<b>DROID</b>
+GAUYQY4TB22GPRXXLVLK24ZVPTAGGQM7FQNYVXNZMMKX65UJVX6<b>DROID</b>
 </p>
 
 To show support, given that your [defaults are set](#set-default-address-and-seed), and the [network is chosen](#choose-stellar-network), you could:
 
 ```
-$ bb send-payment -s '{"to": "GBKOPETTWWVE7DM72YOVQ4M2UIY3JCKDYQBTSNLGLHI6L43K7XPDROID",
+$ bb send-payment -s '{"to": "GAUYQY4TB22GPRXXLVLK24ZVPTAGGQM7FQNYVXNZMMKX65UJVX6DROID",
                        "amount": "1.0"}'
 ```
 
