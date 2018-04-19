@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
+	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/keypair"
@@ -69,7 +73,55 @@ func createRandomKeys() (address, seed string) {
 	return pair.Address(), pair.Seed()
 }
 
+func lookForKeysWithSuffix(
+	suffix string,
+	found chan *keypair.Full,
+	counter *uint64) {
+
+	for {
+		kp, err := keypair.Random()
+		if err != nil {
+			log.Fatalf("could not generate keys due to %v", err)
+		}
+		atomic.AddUint64(counter, 1)
+
+		pub := kp.Address()
+
+		if strings.HasSuffix(pub, suffix) {
+			found <- kp
+			break
+		}
+	}
+}
+
 func createVanityKeys(suffix string) (address, seed string) {
 
-	return "foo", "bar"
+	suffix = strings.ToUpper(suffix)
+
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	var counter uint64
+	every := 10 * time.Second
+	found := make(chan *keypair.Full)
+
+	log.Printf("asking %d CPU cores to find keys with %s suffix. stand by.\n", cores, suffix)
+
+	for i := 0; i < cores; i++ {
+		go lookForKeysWithSuffix(suffix, found, &counter)
+	}
+
+	ticker := time.NewTicker(every)
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Printf("went through %d keys. keep looking\n", counter)
+		case pair := <-found:
+			log.Printf("found keys with %s suffix. (looked at %d keys)\n", suffix, counter)
+			log.Printf("public key: %s", pair.Address())
+			ticker.Stop()
+			return pair.Address(), pair.Seed()
+		}
+	}
 }
