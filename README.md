@@ -17,6 +17,7 @@ A command line interface to [Stellar](https://www.stellar.org/) networks.
   - [Point to a Custom Network](#point-to-a-custom-network)
 - [Buttons to Push](#buttons-to-push)
 - [Create Account Keys](#create-account-keys)
+  - [Vanity Address](#vanity-address)
 - [Create Account](#create-account)
   - [Funding Test Account](#funding-test-account)
   - [Creating New Account](#creating-new-account)
@@ -306,6 +307,35 @@ seed: SAWDCNZF7Y67RWT5FC6YSAHFRH23OFU2OFYFXFNWYETL7S7J72CWK6JG
 
 An account `seed` should be kept private, hence the "`private`" key.
 It is later used to _sign_ Stellar transactions to confirm that it is "_really you_" and "_you approve_" the transaction.
+
+### Vanity Address
+
+Sometimes it is desired to have a recognizable Stellar address. There are a couple of ways to do that:
+
+* using a federation server, then an address can be used as `john_malkovich*lestercorp.com`
+* generating a "vanity address", which is a pair of keys, where a public key has a predefined pattern
+
+[Federation](#Federation) section talks more about the first approach.
+
+A new "vanity address" can be generated with `gen-keys` command by giving it a desired suffux (`--suffix`/`-s`).
+
+For example, BB-8 has a old friend [R2-D2](https://en.wikipedia.org/wiki/R2-D2) who found out about Stellar and is itching to try it. As a true friend, BB-8 can generate a vanity address for R2-D2 that ends with "R2D2" characters so there is less confusion when looking at the key:
+
+```sh
+$ bb gen-keys -s R2D2 r2d2
+
+2018/04/18 23:47:34 asking 8 CPU cores to find keys with R2D2 suffix. stand by.
+went through 550,661 keys	| rate 55,066/s	| keep looking
+went through 1,071,110 keys	| rate 52,044/s	| keep looking
++----------------------------------------------------------+--------+--------------+-------------------+
+|                         ADDRESS                          | SUFFIX | TOOK SECONDS | WENT THROUGH KEYS |
++----------------------------------------------------------+--------+--------------+-------------------+
+| GDOQXK5J46H5WXRHUBRBGJOOTMAVKS6OCSFDJVTWLFHBYHRE264DR2D2 | R2D2   |           20 |           1134976 |
++----------------------------------------------------------+--------+--------------+-------------------+
+2018/04/18 23:47:55 keys are created and stored in: r2d2.pub and r2d2
+```
+
+As you can see BB-8 looked up the number of CPU cores available and gently asked these cores to generate new Stellar addresses until one of them has an `R2D2` suffix.
 
 ## Create Account
 

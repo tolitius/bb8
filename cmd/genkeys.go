@@ -5,10 +5,14 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/text/message"
+
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/stellar/go/keypair"
 )
@@ -94,6 +98,20 @@ func lookForKeysWithSuffix(
 	}
 }
 
+type rate struct {
+	count uint64
+	time  int
+}
+
+func reportFoundPair(address, suffix string, tried uint64, took int) {
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetRowLine(true)
+	table.SetHeader([]string{"address", "suffix", "took seconds", "went through keys"})
+	table.Append([]string{address, suffix, strconv.Itoa(took), strconv.FormatUint(tried, 10)})
+	table.Render()
+}
+
 func createVanityKeys(suffix string) (address, seed string) {
 
 	suffix = strings.ToUpper(suffix)
@@ -105,23 +123,25 @@ func createVanityKeys(suffix string) (address, seed string) {
 	every := 10 * time.Second
 	found := make(chan *keypair.Full)
 
-	fmt.Printf("asking %d CPU cores to find keys with %s suffix. stand by.\n", cores, suffix)
+	log.Printf("asking %d CPU cores to find keys with %s suffix. stand by.\n", cores, suffix)
 
 	for i := 0; i < cores; i++ {
 		go lookForKeysWithSuffix(suffix, found, &counter)
 	}
 
 	ticker := time.NewTicker(every)
+	hashRate := &rate{}
+	p := message.NewPrinter(message.MatchLanguage("en"))
 
 	for {
 		select {
 		case <-ticker.C:
-			fmt.Printf("went through %d keys. keep looking\n", counter)
+			interval := int(every.Seconds())
+			p.Printf("went through %d keys\t| rate %d/s\t| keep looking\n", counter, (counter-hashRate.count)/uint64(interval))
+			hashRate.count = counter
+			hashRate.time += interval
 		case pair := <-found:
-			fmt.Printf("found keys with %s suffix. (looked at %d keys)\n", suffix, counter)
-			fmt.Printf("\n+----------------------------------------------------------------------+\n")
-			fmt.Printf("| public key: %s |\n", pair.Address())
-			fmt.Printf("+----------------------------------------------------------------------+\n\n")
+			reportFoundPair(pair.Address(), suffix, counter, hashRate.time)
 			ticker.Stop()
 			return pair.Address(), pair.Seed()
 		}
