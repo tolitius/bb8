@@ -105,7 +105,7 @@ func createVanityKeys(suffix string) (address, seed string) {
 	every := 10 * time.Second
 	found := make(chan *keypair.Full)
 
-	log.Printf("asking %d CPU cores to find keys with %s suffix. stand by.\n", cores, suffix)
+	fmt.Printf("asking %d CPU cores to find keys with %s suffix. stand by.\n", cores, suffix)
 
 	for i := 0; i < cores; i++ {
 		go lookForKeysWithSuffix(suffix, found, &counter)
@@ -116,10 +116,12 @@ func createVanityKeys(suffix string) (address, seed string) {
 	for {
 		select {
 		case <-ticker.C:
-			log.Printf("went through %d keys. keep looking\n", counter)
+			fmt.Printf("went through %d keys. keep looking\n", counter)
 		case pair := <-found:
-			log.Printf("found keys with %s suffix. (looked at %d keys)\n", suffix, counter)
-			log.Printf("public key: %s", pair.Address())
+			fmt.Printf("found keys with %s suffix. (looked at %d keys)\n", suffix, counter)
+			fmt.Printf("\n+----------------------------------------------------------------------+\n")
+			fmt.Printf("| public key: %s |\n", pair.Address())
+			fmt.Printf("+----------------------------------------------------------------------+\n\n")
 			ticker.Stop()
 			return pair.Address(), pair.Seed()
 		}
