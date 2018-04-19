@@ -137,7 +137,7 @@ func createVanityKeys(suffix string) (address, seed string) {
 		select {
 		case <-ticker.C:
 			interval := int(every.Seconds())
-			p.Printf("went through %d keys\t| rate %d/s\t| keep looking\n", counter, (counter-hashRate.count)/uint64(interval))
+			p.Printf("went through %d keys\t| rate %d/s\t| still looking\n", counter, (counter-hashRate.count)/uint64(interval))
 			hashRate.count = counter
 			hashRate.time += interval
 		case pair := <-found:
