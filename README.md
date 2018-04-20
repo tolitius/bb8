@@ -317,7 +317,7 @@ Sometimes it is desired to have a recognizable Stellar address. There are a coup
 
 [Federation](#Federation) section talks more about the first approach.
 
-A new "vanity address" can be generated with `gen-keys` command by giving it a desired suffux (`--suffix`/`-s`).
+A new "vanity address" can be generated with `gen-keys` command by giving it a desired suffux (`--suffix`/`-s`) or prefix (`--prefix`/`-p`) or both.
 
 For example, BB-8 has an old friend [R2-D2](https://en.wikipedia.org/wiki/R2-D2) who found out about Stellar and is itching to try it. As a true friend, BB-8 can generate a vanity address for R2-D2 that ends with "`ARTOO`" characters so there is less confusion when looking at the key:
 

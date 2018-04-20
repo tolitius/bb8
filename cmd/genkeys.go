@@ -18,6 +18,7 @@ import (
 )
 
 var suffix string
+var prefix string
 
 var genKeysCmd = &cobra.Command{
 	Use:   "gen-keys [file-name]",
@@ -27,11 +28,11 @@ given the file name/path gen-keys generates these pair of keys in "file-name.pub
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if suffix != "" {
-			address, seed := createVanityKeys(suffix)
+		if suffix == "" && prefix == "" {
+			address, seed := createRandomKeys()
 			storeKeys(address, seed, args[0])
 		} else {
-			address, seed := createRandomKeys()
+			address, seed := createVanityKeys(prefix, suffix)
 			storeKeys(address, seed, args[0])
 		}
 	},
@@ -40,6 +41,7 @@ given the file name/path gen-keys generates these pair of keys in "file-name.pub
 
 func init() {
 	genKeysCmd.PersistentFlags().StringVarP(&suffix, "suffix", "s", "", "generate a pair of keys where the public key ends with a particular suffix. example: --suffix DROID")
+	genKeysCmd.PersistentFlags().StringVarP(&prefix, "prefix", "p", "", "generate a pair of keys where the public key ends with a particular prefix. example: --prefix BEEATE")
 }
 
 func storeKeys(address, seed, fpath string) string {
@@ -77,8 +79,8 @@ func createRandomKeys() (address, seed string) {
 	return pair.Address(), pair.Seed()
 }
 
-func lookForKeysWithSuffix(
-	suffix string,
+func lookForKeys(
+	prefix, suffix string,
 	found chan *keypair.Full,
 	counter *uint64) {
 
@@ -87,11 +89,23 @@ func lookForKeysWithSuffix(
 		if err != nil {
 			log.Fatalf("could not generate keys due to %v", err)
 		}
+
 		atomic.AddUint64(counter, 1)
 
 		pub := kp.Address()
+		var match bool
 
-		if strings.HasSuffix(pub, suffix) {
+		if suffix != "" {
+			if prefix == "" {
+				match = strings.HasSuffix(pub, suffix)
+			} else {
+				match = strings.HasPrefix(pub[1:], prefix) && strings.HasSuffix(pub, suffix)
+			}
+		} else {
+			match = strings.HasPrefix(pub[1:], prefix)
+		}
+
+		if match {
 			found <- kp
 			break
 		}
@@ -103,17 +117,18 @@ type rate struct {
 	time  int
 }
 
-func reportFoundPair(address, suffix string, tried uint64, took int) {
+func reportFoundPair(address, prefix, suffix string, tried uint64, took int) {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetRowLine(true)
-	table.SetHeader([]string{"address", "suffix", "took seconds", "went through keys"})
-	table.Append([]string{address, suffix, strconv.Itoa(took), strconv.FormatUint(tried, 10)})
+	table.SetHeader([]string{"address", "prefix", "suffix", "took seconds", "went through keys"})
+	table.Append([]string{address, prefix, suffix, strconv.Itoa(took), strconv.FormatUint(tried, 10)})
 	table.Render()
 }
 
-func createVanityKeys(suffix string) (address, seed string) {
+func createVanityKeys(prefix, suffix string) (address, seed string) {
 
+	prefix = strings.ToUpper(prefix)
 	suffix = strings.ToUpper(suffix)
 
 	cores := runtime.NumCPU()
@@ -123,10 +138,10 @@ func createVanityKeys(suffix string) (address, seed string) {
 	every := 10 * time.Second
 	found := make(chan *keypair.Full)
 
-	log.Printf("asking %d CPU cores to find keys with %s suffix. stand by.\n", cores, suffix)
+	log.Printf("asking %d CPU cores to find keys with \"%s\" prefix and \"%s\" suffix. stand by.\n", cores, prefix, suffix)
 
 	for i := 0; i < cores; i++ {
-		go lookForKeysWithSuffix(suffix, found, &counter)
+		go lookForKeys(prefix, suffix, found, &counter)
 	}
 
 	ticker := time.NewTicker(every)
@@ -141,7 +156,7 @@ func createVanityKeys(suffix string) (address, seed string) {
 			hashRate.count = counter
 			hashRate.time += interval
 		case pair := <-found:
-			reportFoundPair(pair.Address(), suffix, counter, hashRate.time)
+			reportFoundPair(pair.Address(), prefix, suffix, counter, hashRate.time)
 			ticker.Stop()
 			return pair.Address(), pair.Seed()
 		}
