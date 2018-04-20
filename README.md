@@ -340,6 +340,25 @@ went through 5,105,370 keys	| rate 101,881/s	| still looking
 
 As you can see BB-8 looked up the number of CPU cores available and gently asked these cores to generate new Stellar addresses until one of them has an `ARTOO` suffix.
 
+```sh
+$ bb gen-keys -p DRO -s ID r2d2
+
+2018/04/20 20:47:38 asking 8 CPU cores to find keys with "DRO" prefix and "ID" suffix. stand by.
+went through 1,017,108 keys	| rate 101,710/s	| still looking
+went through 2,029,680 keys	| rate 101,254/s	| still looking
+went through 3,040,313 keys	| rate 101,062/s	| still looking
+went through 4,064,337 keys	| rate 102,401/s	| still looking
+went through 5,065,131 keys	| rate 100,078/s	| still looking
++----------------------------------------------------------+--------+--------+--------------+-------------------+
+|                         ADDRESS                          | PREFIX | SUFFIX | TOOK SECONDS | WENT THROUGH KEYS |
++----------------------------------------------------------+--------+--------+--------------+-------------------+
+| GDRORLZZTD7SPFZ3SOV53KMYKGHBII6ZV32B5KRZI6GXRBNMSXRFLTID | DRO    | ID     |           50 |           5499735 |
++----------------------------------------------------------+--------+--------+--------------+-------------------+
+2018/04/20 20:48:33 keys are created and stored in: r2d2.pub and r2d2
+```
+
+generated a key with both prefix and suffix: G**DRO**RLZZTD7SPFZ3SOV53KMYKGHBII6ZV32B5KRZI6GXRBNMSXRFLT**ID**
+
 ## Create Account
 
 Once the account keys are generated there are two ways to create / record an account in the Stellar ledger:
