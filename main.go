@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tolitius/bb8/cmd"
+    "github.com/smorano/bb8/cmd"
 )
 
 func main() {
