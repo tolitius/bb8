@@ -1,5 +1,3 @@
-# Beebee Ate
-
 <img src="doc/img/stellar-bb8-logo.png" width="150px">
 
 [![Release Version](https://img.shields.io/github/release/tolitius/bb8.svg)](https://github.com/tolitius/bb8/releases/latest)
@@ -266,7 +264,7 @@ Available Commands:
   send-payment   send payment from one account to another
   set-options    set options on the account
   sign           sign a base64 encoded transaction
-  stream         stream "ledger", "payment" and "tranasaction" events
+  stream         stream "ledger", "payment", "transaction" and "operations" events
   submit         submit a base64 encoded transaction
   version        print the version number of bb
 
@@ -1098,23 +1096,31 @@ BB-8 has a `stream` command that will latch onto a Stellar network and will list
 
 ```sh
 $ bb stream --help
-stream "ledger", "payment" and "tranasaction" events.
+stream "ledger", "payment", "transaction" and "operations" events.
 events are streamed in JSON and will do so forever or for a period of time specified by a --seconds flag.
 
 example: stream --ledger
          stream -t GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP --seconds 42 --cursor now
-         stream -p GCYQSB3UQDSISB5LKAL2OEVLAYJNIR7LFVYDNKRMLWQKDCBX4PU3Z6JP -s 42
+         stream -p luke_skywalker*scoutship.com -s 42
+         stream -o --from 2018-02-12T11:45:26Z
 
 Usage:
   bb stream [flags]
 
 Flags:
   -c, --cursor string         a paging token, specifying where to start returning records from. When streaming this can be set to "now" to stream object created since your request time. examples: -c 8589934592, -c now
+  -f, --from string           a start date (RFC3339), specifying where to start returning records from when streaming operations. Override cursor setting. examples: --from 2018-02-12T11:45:26Z
   -h, --help                  help for stream
   -l, --ledger                stream ledger events
+  -o, --operations            stream operation-all events
   -p, --payments string       stream account payment events. example: --payments account-address
   -s, --seconds int           number of seconds to stream events for
   -t, --transactions string   stream account transaction events. example: --transactions account-address
+
+Global Flags:
+      --horizon string       horizon server name from the BB8 config file. by default BB8 would look in "home.dir/.bb8/bb8.json" file
+      --horizon-url string   horizon server URL to use for "this" transaction
+  -n, --network string       network name from the BB8 config file. by default BB8 would look in "home.dir/.bb8/bb8.json" file
 ```
 
 Events are streamed in JSON and can be filtered by `jq`, `grep`, and alike. As any streaming data these events could also be rolled up on the fly. Command line is perfect for this since it is extremely interactive and command rich.

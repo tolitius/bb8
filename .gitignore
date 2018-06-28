@@ -12,6 +12,8 @@ bb8
 dist/
 tmp/
 .DS_Store
+#vendor*
+Gopkg*
 
 
 # Test binary, build with `go test -c`
