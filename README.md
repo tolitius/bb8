@@ -264,7 +264,7 @@ Available Commands:
   send-payment   send payment from one account to another
   set-options    set options on the account
   sign           sign a base64 encoded transaction
-  stream         stream "ledger", "payment", "tranasaction" and "operations" events
+  stream         stream "ledger", "payment", "transaction" and "operations" events
   submit         submit a base64 encoded transaction
   version        print the version number of bb
 
@@ -1096,7 +1096,7 @@ BB-8 has a `stream` command that will latch onto a Stellar network and will list
 
 ```sh
 $ bb stream --help
-stream "ledger", "payment", "tranasaction" and "operations" events.
+stream "ledger", "payment", "transaction" and "operations" events.
 events are streamed in JSON and will do so forever or for a period of time specified by a --seconds flag.
 
 example: stream --ledger
